@@ -260,7 +260,7 @@ public class RegisterUserCommandHandler(
 	IPasswordHasher passwordHasher)
 		: IRequestHandler<RegisterUserCommand, Result<Guid>>
 {
-	public async Task<Result<Guid>> Handle(
+	public async Task<Result<Guid>> HandleAsync(
 		RegisterUserCommand request,
 		CancellationToken cancellationToken)
 	{
@@ -295,14 +295,20 @@ public class RegisterUserCommandValidator()
 Queries represent read operations. They return DTOs directly (no Result wrapper).
 
 ```csharp
-public record GetUserProfileQuery(Guid UserId) : IRequest<UserProfileDto>;
+public record GetUserProfileQuery(
+	Guid UserId)
+		: IRequest<UserProfileDto>;
 
-public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, UserProfileDto>
+public class GetUserProfileQueryHandler(
+	IUserRepository userRepository)
+		: IRequestHandler<GetUserProfileQuery, UserProfileDto>
 {
-    public async Task<UserProfileDto> Handle(GetUserProfileQuery request, CancellationToken cancellationToken)
-    {
-        // Implementation
-    }
+	public async Task<UserProfileDto> HandleAsync(
+		GetUserProfileQuery request,
+		CancellationToken cancellationToken)
+	{
+		// Implementation
+	}
 }
 ```
 
@@ -349,7 +355,7 @@ public enum ResultErrorType
 
 - All I/O operations are async
 - Use `CancellationToken` in all async method signatures
-- Suffix async methods with `Async` only on interfaces; MediatR handlers follow the `Handle` convention
+- All async methods must have the `Async` suffix (e.g., `FindByEmailAsync`, `HandleAsync`). This includes MediatR handlers — implement them as `HandleAsync`.
 
 ### Dependency Injection
 
@@ -421,9 +427,9 @@ dmauth-web/src/
 
 ### Framework and Libraries
 
-- **xUnit** — test framework
+- **xUnit v3** — test framework
 - **FluentAssertions** — assertion library (`result.Should().Be(...)`)
-- **Moq** or **NSubstitute** — mocking (pick one and stay consistent)
+- **NSubstitute** — mocking library
 - **EF Core InMemory** — integration test database
 - **WebApplicationFactory** — API integration tests
 
