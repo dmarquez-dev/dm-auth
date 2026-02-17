@@ -1,6 +1,6 @@
 # DM Auth
 
-OAuth 2.0 + OpenID Connect Authorization Server built with .NET 9 and React.
+OAuth 2.0 + OpenID Connect Authorization Server built with .NET 10 and React.
 
 DM Auth provides user identity management and enables external client applications to integrate "Sign in with DM Auth" functionality using the Authorization Code + PKCE grant type.
 
@@ -14,7 +14,7 @@ DM Auth provides user identity management and enables external client applicatio
 
 ## Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [SQL Server](https://www.microsoft.com/en-us/sql-server/) (local instance or Docker)
 - [Node.js 18+](https://nodejs.org/) (for the React SPA)
 - [Docker](https://www.docker.com/) (optional, for local SQL Server)
@@ -79,7 +79,7 @@ The SPA will be available at `http://localhost:5173`.
 ```
 dm-auth/
 ├── DM-Auth.sln
-├── Directory.Build.props              # Shared build settings (net9.0, nullable, implicit usings)
+├── Directory.Build.props              # Shared build settings (net10.0, nullable, implicit usings)
 ├── docs/
 │   ├── work-breakdown.md              # Epic/task tracking for Jira import
 │   ├── coding-conventions.md          # C#, React, and testing standards
@@ -90,19 +90,20 @@ dm-auth/
 │   ├── DMAuth.Infrastructure/         # EF Core, repositories, JWT service, Key Vault
 │   └── DMAuth.Web/                    # API controllers, middleware, DI/startup
 ├── tests/
-│   ├── DMAuth.Tests.Unit/             # xUnit unit tests
-│   └── DMAuth.Tests.Integration/      # xUnit integration tests (EF Core InMemory)
+│   ├── DMAuth.Tests.Unit/             # xUnit v3 unit tests
+│   └── DMAuth.Tests.Integration/      # xUnit v3 integration tests (EF Core InMemory)
 └── dmauth-web/                        # React SPA (Vite + TypeScript + Tailwind)
 ```
 
 ### Layer Dependencies
 
 ```
-Web → Application → Domain
-Infrastructure → Application → Domain
+Application → Domain
+Infrastructure → Domain
+Web → Application, Infrastructure
 ```
 
-The Domain project has zero external dependencies. Application defines interfaces; Infrastructure implements them.
+The Domain project has zero external dependencies. Application contains business logic and service implementations (TokenService, PasswordHasher). Infrastructure handles data persistence and external service integrations (EF Core, Key Vault). Web is the composition root that wires everything together via DI.
 
 ## Architecture
 
