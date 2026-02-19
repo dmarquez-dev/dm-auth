@@ -11,7 +11,7 @@ builder.Host.UseSerilog((context, loggerConfig) =>
 
 // Add layer services
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Add controllers
 builder.Services.AddControllers();

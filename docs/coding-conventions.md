@@ -189,6 +189,36 @@ var normalized = input
 	.Replace(" ", "-");
 ```
 
+### XML Documentation Comments
+
+All public types, members, and parameters should have XML documentation comments.
+
+#### Formatting Rules
+
+- Tag descriptions go on a **new line**, indented one level from their tag.
+- All descriptions are proper sentences ending with a period.
+- Multi-sentence descriptions are allowed; each sentence ends with a period.
+
+```csharp
+/// <summary>
+///	Represents a user account in the system.
+/// </summary>
+public class User
+	: AuditableEntity
+{
+}
+
+/// <summary>
+///	Base exception for domain rule violations.
+/// </summary>
+/// <param name="message">
+///	Description of the domain rule that was violated.
+/// </param>
+public class DomainException(
+	string message)
+		: Exception(message);
+```
+
 ### Project Structure
 
 ```
