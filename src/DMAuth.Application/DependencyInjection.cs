@@ -1,4 +1,5 @@
 using System.Reflection;
+using DMAuth.Application.Common.Behaviors;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +11,8 @@ namespace DMAuth.Application;
 public static class DependencyInjection
 {
 	/// <summary>
-	///		Adds applications services including MediatR.
+	///		Adds application services including MediatR, FluentValidation,
+	///		and the validation pipeline behavior.
 	/// </summary>
 	/// <param name="services">
 	///		The service collection to register services into.
@@ -24,9 +26,15 @@ public static class DependencyInjection
 		var assembly = Assembly.GetExecutingAssembly();
 
 		services.AddMediatR(config =>
-			config.RegisterServicesFromAssembly(assembly));
+		{
+			config.RegisterServicesFromAssembly(
+				assembly);
+			config.AddOpenBehavior(
+				typeof(ValidationBehavior<,>));
+		});
 
-		services.AddValidatorsFromAssembly(assembly);
+		services.AddValidatorsFromAssembly(
+			assembly);
 
 		return services;
 	}
