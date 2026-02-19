@@ -6,8 +6,7 @@ public partial class Result
 	///		Returns a successful result.
 	/// </summary>
 	public static Result Success() =>
-		new(
-			true);
+		new(true);
 
 	/// <summary>
 	///		Returns a failure result with the specified error category.
@@ -32,11 +31,10 @@ public partial class Result
 	/// <param name="error">
 	///		Description of what was not found.
 	/// </param>
-	public static Result NotFound(
-		string error) =>
-			Failure(
-				error,
-				ResultError.NotFound);
+	public static Result NotFound(string error) =>
+		Failure(
+			error,
+			ResultError.NotFound);
 
 	/// <summary>
 	///		Returns a failure result indicating a conflict with existing data.
@@ -44,11 +42,10 @@ public partial class Result
 	/// <param name="error">
 	///		Description of the conflict.
 	/// </param>
-	public static Result Conflict(
-		string error) =>
-			Failure(
-				error,
-				ResultError.Conflict);
+	public static Result Conflict(string error) =>
+		Failure(
+			error,
+			ResultError.Conflict);
 
 	/// <summary>
 	///		Returns a failure result indicating the caller is not authenticated.
@@ -56,11 +53,10 @@ public partial class Result
 	/// <param name="error">
 	///		Description of the authentication requirement.
 	/// </param>
-	public static Result Unauthorized(
-		string error) =>
-			Failure(
-				error,
-				ResultError.Unauthorized);
+	public static Result Unauthorized(string error) =>
+		Failure(
+			error,
+			ResultError.Unauthorized);
 
 	/// <summary>
 	///		Returns a failure result indicating the caller lacks the required permission.
@@ -68,11 +64,10 @@ public partial class Result
 	/// <param name="error">
 	///		Description of the permission requirement.
 	/// </param>
-	public static Result Forbidden(
-		string error) =>
-			Failure(
-				error,
-				ResultError.Forbidden);
+	public static Result Forbidden(string error) =>
+		Failure(
+			error,
+			ResultError.Forbidden);
 
 	/// <summary>
 	///		Returns a failure result indicating a general business rule violation.
@@ -80,9 +75,8 @@ public partial class Result
 	/// <param name="error">
 	///		Description of the violated rule.
 	/// </param>
-	public static Result Invalid(
-		string error) =>
-			Failure(
-				error,
-				ResultError.Invalid);
+	public static Result Invalid(string error) =>
+		Failure(
+			error,
+			ResultError.Invalid);
 }

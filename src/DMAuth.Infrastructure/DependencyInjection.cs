@@ -27,8 +27,7 @@ public static class DependencyInjection
 		IConfiguration configuration)
 	{
 		services.AddDbContext<DmAuthDbContext>(options =>
-			options.UseSqlServer(
-				configuration.GetConnectionString("DmAuthConnection")));
+			options.UseSqlServer(configuration.GetConnectionString("DmAuthConnection")));
 
 		return services;
 	}

@@ -30,30 +30,64 @@ Use primary constructors where possible. This applies to classes, records, and a
 
 #### Parameter Formatting
 
-All constructor and method parameters go on individual lines. The closing parenthesis follows the last parameter on the same line.
+**Primary constructor parameters**: always one per line, regardless of count.
+Primary constructors are structural type declarations and benefit from vertical clarity at any arity.
+
+**Regular (body) constructor and method parameters**: one per line when there are 2 or more; inline when there is exactly 1.
+Regular constructors and methods are implementation — the 2+ threshold avoids noise for simple single-argument signatures.
 
 ```csharp
-// Class with primary constructor
+// Primary constructor — always wrap (even 1 param)
+public class DomainException(
+	string message)
+		: Exception(message);
+
+// Primary constructor — always wrap
 public sealed class RegisterUserCommandHandler(
-    IUserRepository userRepository,
-    IPasswordHasher passwordHasher)
-    : IRequestHandler<RegisterUserCommand, Result<Guid>>
+	IUserRepository userRepository,
+	IPasswordHasher passwordHasher)
+		: IRequestHandler<RegisterUserCommand, Result<Guid>>
 {
 }
 
-// Record
-public record RegisterUserCommand(
-    string Email,
-    string Username,
-    string Password,
-    string DisplayName) : IRequest<Result<Guid>>;
+// Regular constructor, 1 param — inline
+public Email(string value)
+{
+	Value = value.ToLowerInvariant();
+}
 
-// Method
-public async Task<Result<Guid>> Handle(
-    RegisterUserCommand request,
-    CancellationToken cancellationToken)
+// Regular constructor, 2+ params — wrap
+public User(
+	Email email,
+	string username,
+	HashedPassword password,
+	string displayName)
+{
+	Email = email;
+	Username = username;
+}
+
+// Method, 1 parameter — inline
+public async Task InvokeAsync(HttpContext context)
 {
 }
+
+// Method, 2+ parameters — wrap
+public async Task<Result<Guid>> HandleAsync(
+	RegisterUserCommand request,
+	CancellationToken cancellationToken)
+{
+}
+
+// Method call/expression body, 1 argument — inline
+public static Result NotFound(string error) =>
+	Failure(error, ResultError.NotFound);
+
+// Method call, 2+ arguments — wrap
+public static Result Failure(
+	string error,
+	ResultError errorType) =>
+		new(false, error, errorType);
 ```
 
 #### Inheritance, Interface Implementation, and Generic Constraints
@@ -114,7 +148,9 @@ public async Task<Result<Guid>> Handle(
 | Element | Indentation | Rule |
 |---------|-------------|------|
 | Primary constructors | — | Use where possible |
-| Parameters | +1 tab from declaration | One per line, closing paren after last param |
+| Primary constructor parameters | +1 tab from declaration | Always one per line, closing paren after last param |
+| Regular constructor parameters | +1 tab from declaration | One per line when 2+; inline when exactly 1 |
+| Method parameters | +1 tab from declaration | One per line when 2+; inline when exactly 1 |
 | Base class / interfaces | +1 tab from previous element | New line |
 | `where` clauses | +1 tab from previous element | New line |
 
@@ -294,7 +330,7 @@ public class RegisterUserCommandHandler(
 		RegisterUserCommand request,
 		CancellationToken cancellationToken)
 	{
-		// Implementation
+		// 2+ params — wrapped
 	}
 }
 
@@ -337,7 +373,7 @@ public class GetUserProfileQueryHandler(
 		GetUserProfileQuery request,
 		CancellationToken cancellationToken)
 	{
-		// Implementation
+		// 2+ params — wrapped
 	}
 }
 ```

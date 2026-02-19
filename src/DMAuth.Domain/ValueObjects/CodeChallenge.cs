@@ -21,8 +21,7 @@ public record CodeChallenge
 	/// <exception cref="DomainException">
 	///		Thrown when the code challenge is empty.
 	/// </exception>
-	public CodeChallenge(
-		string value)
+	public CodeChallenge(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{

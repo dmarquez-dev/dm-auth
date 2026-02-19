@@ -44,10 +44,8 @@ public class DmAuthDbContext(
 		Set<Consent>();
 
 	/// <inheritdoc />
-	protected override void OnModelCreating(
-		ModelBuilder modelBuilder)
+	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
-		modelBuilder.ApplyConfigurationsFromAssembly(
-			typeof(DmAuthDbContext).Assembly);
+		modelBuilder.ApplyConfigurationsFromAssembly(typeof(DmAuthDbContext).Assembly);
 	}
 }

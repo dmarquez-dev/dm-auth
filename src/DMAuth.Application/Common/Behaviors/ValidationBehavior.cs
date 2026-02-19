@@ -32,17 +32,14 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
 	{
 		if (!validators.Any())
 		{
-			return await next(
-				cancellationToken);
+			return await next(cancellationToken);
 		}
 
-		var context = new ValidationContext<TRequest>(
-			request);
+		var context = new ValidationContext<TRequest>(request);
 
 		var failures = validators
 			.Select(validator =>
-				validator.Validate(
-					context))
+				validator.Validate(context))
 			.SelectMany(result =>
 				result.Errors)
 			.Where(failure =>
@@ -51,11 +48,9 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
 
 		if (failures.Count > 0)
 		{
-			throw new ValidationException(
-				failures);
+			throw new ValidationException(failures);
 		}
 
-		return await next(
-			cancellationToken);
+		return await next(cancellationToken);
 	}
 }

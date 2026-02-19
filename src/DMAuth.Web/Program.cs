@@ -7,10 +7,8 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
-builder.Host.UseSerilog(
-	(context, loggerConfig) =>
-		loggerConfig.ReadFrom.Configuration(
-			context.Configuration));
+builder.Host.UseSerilog((context, loggerConfig) =>
+	loggerConfig.ReadFrom.Configuration(context.Configuration));
 
 // Add layer services
 builder.Services.AddApplication();
@@ -30,8 +28,7 @@ builder.Services.AddCors(options =>
 				.Get<string[]>() ?? [];
 
 			policy
-				.WithOrigins(
-					allowedOrigins)
+				.WithOrigins(allowedOrigins)
 				.AllowAnyHeader()
 				.AllowAnyMethod()
 				.AllowCredentials();

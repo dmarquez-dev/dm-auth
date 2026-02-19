@@ -20,21 +20,17 @@ public static class DependencyInjection
 	/// <returns>
 	///		The service collection for chaining.
 	/// </returns>
-	public static IServiceCollection AddApplication(
-		this IServiceCollection services)
+	public static IServiceCollection AddApplication(this IServiceCollection services)
 	{
 		var assembly = Assembly.GetExecutingAssembly();
 
 		services.AddMediatR(config =>
 		{
-			config.RegisterServicesFromAssembly(
-				assembly);
-			config.AddOpenBehavior(
-				typeof(ValidationBehavior<,>));
+			config.RegisterServicesFromAssembly(assembly);
+			config.AddOpenBehavior(typeof(ValidationBehavior<,>));
 		});
 
-		services.AddValidatorsFromAssembly(
-			assembly);
+		services.AddValidatorsFromAssembly(assembly);
 
 		return services;
 	}

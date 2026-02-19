@@ -11,8 +11,7 @@ public class RefreshTokenConfiguration
 	: IEntityTypeConfiguration<RefreshToken>
 {
 	/// <inheritdoc />
-	public void Configure(
-		EntityTypeBuilder<RefreshToken> builder)
+	public void Configure(EntityTypeBuilder<RefreshToken> builder)
 	{
 		builder.ToTable("RefreshTokens");
 

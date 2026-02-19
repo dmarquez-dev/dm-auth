@@ -21,8 +21,7 @@ public record Email
 	/// <exception cref="DomainException">
 	///		Thrown when the email is empty, missing '@', or exceeds 256 characters.
 	/// </exception>
-	public Email(
-		string value)
+	public Email(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{

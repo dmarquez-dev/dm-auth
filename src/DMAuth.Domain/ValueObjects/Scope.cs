@@ -11,7 +11,9 @@ public record Scope
 	private static readonly HashSet<string> _allowedScopes = Enum
 		.GetValues<ScopeType>()
 		.Select(scope =>
-			scope.ToString().ToLowerInvariant())
+			scope
+				.ToString()
+				.ToLowerInvariant())
 		.ToHashSet();
 
 	/// <summary>
@@ -28,8 +30,7 @@ public record Scope
 	/// <exception cref="DomainException">
 	///		Thrown when the scope is empty or not a recognized scope type.
 	/// </exception>
-	public Scope(
-		string value)
+	public Scope(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{
