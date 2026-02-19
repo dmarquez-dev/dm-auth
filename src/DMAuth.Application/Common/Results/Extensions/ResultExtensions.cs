@@ -11,9 +11,8 @@ public static class ResultExtensions
 	/// <param name="result">
 	///		The result to inspect.
 	/// </param>
-	public static bool IsNotFound(
-		this Result result) =>
-			result.ErrorType is ResultError.NotFound;
+	public static bool IsNotFound(this Result result) =>
+		result.ErrorType is ResultError.NotFound;
 
 	/// <summary>
 	///		Returns true when the result represents a conflict failure.
@@ -21,9 +20,8 @@ public static class ResultExtensions
 	/// <param name="result">
 	///		The result to inspect.
 	/// </param>
-	public static bool IsConflict(
-		this Result result) =>
-			result.ErrorType is ResultError.Conflict;
+	public static bool IsConflict(this Result result) =>
+		result.ErrorType is ResultError.Conflict;
 
 	/// <summary>
 	///		Returns true when the result represents an unauthorized failure.
@@ -31,9 +29,8 @@ public static class ResultExtensions
 	/// <param name="result">
 	///		The result to inspect.
 	/// </param>
-	public static bool IsUnauthorized(
-		this Result result) =>
-			result.ErrorType is ResultError.Unauthorized;
+	public static bool IsUnauthorized(this Result result) =>
+		result.ErrorType is ResultError.Unauthorized;
 
 	/// <summary>
 	///		Returns true when the result represents a forbidden failure.
@@ -41,9 +38,8 @@ public static class ResultExtensions
 	/// <param name="result">
 	///		The result to inspect.
 	/// </param>
-	public static bool IsForbidden(
-		this Result result) =>
-			result.ErrorType is ResultError.Forbidden;
+	public static bool IsForbidden(this Result result) =>
+		result.ErrorType is ResultError.Forbidden;
 
 	/// <summary>
 	///		Returns true when the result represents a general business rule violation.
@@ -51,7 +47,6 @@ public static class ResultExtensions
 	/// <param name="result">
 	///		The result to inspect.
 	/// </param>
-	public static bool IsInvalid(
-		this Result result) =>
-			result.ErrorType is ResultError.Invalid;
+	public static bool IsInvalid(this Result result) =>
+		result.ErrorType is ResultError.Invalid;
 }

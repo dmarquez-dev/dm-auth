@@ -12,8 +12,7 @@ public class AuthorizationCodeConfiguration
 	: IEntityTypeConfiguration<AuthorizationCode>
 {
 	/// <inheritdoc />
-	public void Configure(
-		EntityTypeBuilder<AuthorizationCode> builder)
+	public void Configure(EntityTypeBuilder<AuthorizationCode> builder)
 	{
 		builder.ToTable("AuthorizationCodes");
 

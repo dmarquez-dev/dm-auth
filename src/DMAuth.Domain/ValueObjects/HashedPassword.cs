@@ -21,8 +21,7 @@ public record HashedPassword
 	/// <exception cref="DomainException">
 	///		Thrown when the hashed password is empty.
 	/// </exception>
-	public HashedPassword(
-		string value)
+	public HashedPassword(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{

@@ -11,8 +11,7 @@ public class ClientConfiguration
 	: IEntityTypeConfiguration<Client>
 {
 	/// <inheritdoc />
-	public void Configure(
-		EntityTypeBuilder<Client> builder)
+	public void Configure(EntityTypeBuilder<Client> builder)
 	{
 		builder.ToTable("Clients");
 

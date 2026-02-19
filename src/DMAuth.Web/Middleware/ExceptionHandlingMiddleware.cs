@@ -24,13 +24,11 @@ public sealed class ExceptionHandlingMiddleware(
 	/// <param name="context">
 	///		The current HTTP context.
 	/// </param>
-	public async Task InvokeAsync(
-		HttpContext context)
+	public async Task InvokeAsync(HttpContext context)
 	{
 		try
 		{
-			await next(
-				context);
+			await next(context);
 		}
 		catch (ValidationException ex)
 		{

@@ -11,8 +11,7 @@ public class ConsentConfiguration
 	: IEntityTypeConfiguration<Consent>
 {
 	/// <inheritdoc />
-	public void Configure(
-		EntityTypeBuilder<Consent> builder)
+	public void Configure(EntityTypeBuilder<Consent> builder)
 	{
 		builder.ToTable("Consents");
 

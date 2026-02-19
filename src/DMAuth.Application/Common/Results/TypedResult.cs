@@ -16,10 +16,8 @@ public sealed partial class TypedResult<T>
 	/// <param name="value">
 	///		The value produced by the operation.
 	/// </param>
-	private TypedResult(
-		T value)
-			: base(
-				true)
+	private TypedResult(T value)
+		: base(true)
 	{
 		Value = value;
 	}

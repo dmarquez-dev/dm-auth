@@ -21,15 +21,16 @@ public record RedirectUri
 	/// <exception cref="DomainException">
 	///		Thrown when the URI is empty or not a valid absolute URI.
 	/// </exception>
-	public RedirectUri(
-		string value)
+	public RedirectUri(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{
 			throw new DomainException("Redirect URI cannot be empty.");
 		}
 
-		if (!Uri.TryCreate(value, UriKind.Absolute, out _))
+		if (!Uri.TryCreate(
+				value,
+				UriKind.Absolute, out _))
 		{
 			throw new DomainException("Redirect URI must be a valid absolute URI.");
 		}
