@@ -1,13 +1,16 @@
 using DMAuth.Application;
 using DMAuth.Infrastructure;
+using DMAuth.Web.Middleware;
 using Microsoft.OpenApi;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
-builder.Host.UseSerilog((context, loggerConfig) =>
-	loggerConfig.ReadFrom.Configuration(context.Configuration));
+builder.Host.UseSerilog(
+	(context, loggerConfig) =>
+		loggerConfig.ReadFrom.Configuration(
+			context.Configuration));
 
 // Add layer services
 builder.Services.AddApplication();
@@ -27,7 +30,8 @@ builder.Services.AddCors(options =>
 				.Get<string[]>() ?? [];
 
 			policy
-				.WithOrigins(allowedOrigins)
+				.WithOrigins(
+					allowedOrigins)
 				.AllowAnyHeader()
 				.AllowAnyMethod()
 				.AllowCredentials();
@@ -62,7 +66,9 @@ builder.Services.AddSwaggerGen(options =>
 		new OpenApiSecurityRequirement
 		{
 			{
-				new OpenApiSecuritySchemeReference("Bearer", document),
+				new OpenApiSecuritySchemeReference(
+					"Bearer",
+					document),
 				new List<string>()
 			}
 		});
@@ -77,6 +83,7 @@ if (app.Environment.IsDevelopment())
 	app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("AllowSpa");
 app.UseAuthentication();
