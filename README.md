@@ -21,6 +21,12 @@ DM Auth provides user identity management and enables external client applicatio
 
 ## Getting Started
 
+### Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) — verify with `dotnet --version` (should show `10.0.x`)
+- SQL Server with a local instance accessible via Windows Authentication (`localhost\dev` by default)
+- `sqlcmd` CLI on your PATH (ships with SQL Server and SSMS)
+
 ### 1. Clone the Repository
 
 ```bash
@@ -28,51 +34,57 @@ git clone <repo-url>
 cd dm-auth
 ```
 
-### 2. Start SQL Server
-
-Using Docker:
+### 2. Build the Solution
 
 ```bash
-docker-compose up -d
+dotnet build
 ```
 
-Or use a local SQL Server instance.
+Expected: `Build succeeded. 0 Error(s)`
 
-### 3. Configure the API
+### 3. Set Up the Database
 
-Update the connection string in `src/DMAuth.Web/appsettings.Development.json`:
+#### Option A — Setup script (recommended)
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=DMAuth;Trusted_Connection=True;TrustServerCertificate=True;"
-  }
-}
+The script verifies connectivity, syncs `appsettings.Development.json`, applies the migration, and seeds in one step.
+
+```powershell
+.\eng\dev\setup.ps1 -Server "localhost\dev"
 ```
 
-### 4. Run Database Migrations
+`-Server` defaults to `localhost\dev` if omitted. Pass a different value to target another instance:
+
+```powershell
+.\eng\dev\setup.ps1 -Server "localhost\sqlexpress"
+```
+
+#### Option B — Manual steps
+
+**a. Apply the migration**
 
 ```bash
-dotnet ef database update --project src/DMAuth.Infrastructure --startup-project src/DMAuth.Web
+dotnet ef database update \
+  --project src/DMAuth.Infrastructure \
+  --startup-project src/DMAuth.Web
 ```
 
-### 5. Start the API
+> `appsettings.Development.json` is pre-configured for `Server=localhost\dev`. If your instance differs, update the `DmAuthConnection` connection string before running this command.
+
+**b. Seed the database**
+
+```bash
+sqlcmd -S "localhost\dev" -d DMAuth -E -i eng/dev/seed-data.sql
+```
+
+This inserts a test user (`test@example.com` / `testpassword123`) and a public test client (`test_client`).
+
+### 4. Start the API
 
 ```bash
 dotnet run --project src/DMAuth.Web
 ```
 
 The API will be available at `https://localhost:5001`. Swagger UI is available at `https://localhost:5001/swagger` in development.
-
-### 6. Start the React SPA
-
-```bash
-cd dmauth-web
-npm install
-npm run dev
-```
-
-The SPA will be available at `http://localhost:5173`.
 
 ## Project Structure
 
@@ -236,7 +248,7 @@ Key settings in `appsettings.json`:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=...;Database=DMAuth;..."
+    "DmAuthConnection": "Server=...;Database=DMAuth;..."
   },
   "Jwt": {
     "Issuer": "https://localhost:5001",
@@ -289,7 +301,7 @@ dotnet test tests/DMAuth.Tests.Integration
 
 | Variable | Description |
 |----------|-------------|
-| `ConnectionStrings__DefaultConnection` | Azure SQL connection string |
+| `ConnectionStrings__DmAuthConnection` | Azure SQL connection string |
 | `KeyVault__Enabled` | `true` |
 | `KeyVault__VaultUri` | Key Vault URI |
 | `Jwt__Issuer` | Production issuer URL |
