@@ -1,4 +1,4 @@
-namespace DMAuth.Domain.Entities;
+namespace DMAuth.Domain.Entities.RefreshToken;
 
 /// <summary>
 ///		Represents a database-backed refresh token used for token rotation and revocation.

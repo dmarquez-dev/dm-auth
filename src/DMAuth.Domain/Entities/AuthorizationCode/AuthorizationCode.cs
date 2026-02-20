@@ -1,7 +1,7 @@
 using DMAuth.Domain.Enums;
 using DMAuth.Domain.ValueObjects;
 
-namespace DMAuth.Domain.Entities;
+namespace DMAuth.Domain.Entities.AuthorizationCode;
 
 /// <summary>
 ///		Represents a short-lived authorization code issued during the OAuth 2.0 authorization code flow.

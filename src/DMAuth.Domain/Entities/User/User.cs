@@ -1,12 +1,12 @@
 using DMAuth.Domain.ValueObjects;
 
-namespace DMAuth.Domain.Entities;
+namespace DMAuth.Domain.Entities.User;
 
 /// <summary>
 ///		Represents a user account.
 ///		Serves as an aggregate root for user-related operations.
 /// </summary>
-public class User
+public partial class User
 	: AuditableEntity
 {
 	/// <summary>

@@ -1,6 +1,6 @@
 using DMAuth.Application;
 using DMAuth.Infrastructure;
-using DMAuth.Web.Middleware;
+using DMAuth.Web.Common.Middleware;
 using Microsoft.OpenApi;
 using Serilog;
 

@@ -1,6 +1,6 @@
 using DMAuth.Domain.Enums;
 
-namespace DMAuth.Domain.Entities;
+namespace DMAuth.Domain.Entities.Client;
 
 /// <summary>
 ///		Represents an OAuth 2.0 client application.

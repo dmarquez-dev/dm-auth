@@ -1,4 +1,4 @@
-using DMAuth.Domain.Entities;
+using DMAuth.Domain.Entities.User;
 using DMAuth.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
