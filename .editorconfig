@@ -38,10 +38,10 @@ tab_width = 4
 # Language conventions
 # -----------------------------------------------------------------------------
 
-# Use 'var' when type is apparent, explicit type otherwise
-csharp_style_var_for_built_in_types = false:suggestion
-csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = false:suggestion
+# Always use 'var' — type is inferred from context or assignment
+csharp_style_var_for_built_in_types = true:warning
+csharp_style_var_when_type_is_apparent = true:warning
+csharp_style_var_elsewhere = true:warning
 
 # Prefer expression-bodied members for simple single-line bodies
 csharp_style_expression_bodied_methods = when_on_single_line:suggestion

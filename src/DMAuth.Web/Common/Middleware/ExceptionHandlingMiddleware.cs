@@ -1,7 +1,7 @@
 using DMAuth.Domain.Exceptions;
 using FluentValidation;
 
-namespace DMAuth.Web.Middleware;
+namespace DMAuth.Web.Common.Middleware;
 
 /// <summary>
 ///		Middleware that catches unhandled exceptions and maps them to structured

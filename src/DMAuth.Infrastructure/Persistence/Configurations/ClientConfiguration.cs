@@ -1,4 +1,5 @@
-using DMAuth.Domain.Entities;
+using DMAuth.Domain.Entities.Client;
+using DMAuth.Domain.Entities.User;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

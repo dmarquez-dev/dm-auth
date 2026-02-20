@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DMAuth.Application\DMAuth.Application.csproj" />
     <ProjectReference Include="..\DMAuth.Infrastructure\DMAuth.Infrastructure.csproj" />
   </ItemGroup>
 

@@ -1,4 +1,4 @@
-namespace DMAuth.Domain.Entities;
+namespace DMAuth.Domain.Entities.Consent;
 
 /// <summary>
 ///		Represents a user's consent granting specific scopes to a client application.

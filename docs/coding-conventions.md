@@ -73,7 +73,7 @@ public async Task InvokeAsync(HttpContext context)
 }
 
 // Method, 2+ parameters — wrap
-public async Task<Result<Guid>> HandleAsync(
+public async Task<Result<Guid>> Handle(
 	RegisterUserCommand request,
 	CancellationToken cancellationToken)
 {
@@ -257,21 +257,29 @@ public class DomainException(
 
 ### Project Structure
 
+Each layer uses a different organizing principle suited to its responsibilities:
+
+- **Domain** — technical categorization (`Entities/`, `ValueObjects/`, `Policies/`, etc.). Domain concepts are cross-cutting and not feature-owned.
+- **Application** — feature-based (`Features/{Feature}/`). Each feature folder owns its commands, queries, handlers, and validators.
+- **Infrastructure** — concern-based (`Persistence/`, `Security/`, `Logging/`, `Email/`, etc.). Each folder contains the DbContext, client, or service that communicates with that external system or resource.
+
 ```
 DMAuth.Domain/
-  Entities/          # Aggregate roots and entities
-  ValueObjects/      # Immutable value objects
-  Events/            # Domain events
-  Exceptions/        # Domain-specific exceptions
-  Interfaces/        # Repository interfaces
-  Services/          # Domain services
+  Entities/
+    {Entity}/              # Per-entity subdirectory (User/, Client/, etc.)
+      {Entity}.cs          # Properties and constructor
+      {Entity}Methods.cs   # Domain behavior (partial class)
+  ValueObjects/            # Immutable value objects
+  Policies/                # Domain policy classes (PasswordPolicy, etc.)
+  Events/                  # Domain events
+  Exceptions/              # Domain-specific exceptions
+  Interfaces/              # Repository interfaces
 
 DMAuth.Application/
   Common/
     Interfaces/      # Application service interfaces (ITokenService, IPasswordHasher)
     Behaviors/       # MediatR pipeline behaviors (validation)
-    Models/          # Shared models (Result<T>, TokenResponse)
-    Mappings/        # AutoMapper profiles (if used)
+    Results/         # Result<T>, TypedResult<T>, extensions, factories
   Features/
     {Feature}/
       Commands/
@@ -290,43 +298,52 @@ DMAuth.Application/
 DMAuth.Infrastructure/
   Persistence/
     DmAuthDbContext.cs
-    Configurations/   # EF Core fluent API configurations
+    Configurations/   # EF Core entity type configurations
     Repositories/     # IRepository implementations
     Migrations/       # EF Core migrations (auto-generated)
-  Services/           # Application service implementations
+  Security/           # Password hashing, token generation
   Logging/            # Logging configuration
+  Email/              # Email service
   DependencyInjection.cs
 
 DMAuth.Web/
-  Controllers/        # API controllers
-  Middleware/          # Custom middleware
-  Filters/            # Action filters
-  Extensions/         # Service collection extensions
+  Common/                    # Shared Web infrastructure (ApiControllerBase, etc.)
+  {Feature}/                 # Feature folder (Users/, Clients/, OAuth/, etc.)
+    {Feature}Controller.cs
+    Requests/                # Web-layer input records mapped to Application commands/queries
+  Middleware/                # Custom middleware
   Program.cs
 ```
+
+Web-layer input records are defined per feature and mapped to Application commands/queries in the controller action. This prevents HTTP-supplied fields from mixing with context-supplied fields (e.g., `CurrentUserId` from auth).
+
+Application response records are used directly as HTTP response bodies — response types contain no internal fields that need to be hidden from the wire, so a parallel Web-layer response type would add mapping with no benefit.
 
 ### CQRS Patterns
 
 #### Commands
 
-Commands represent actions that change state. They return `Result<T>`.
+Commands represent actions that change state. They return `TypedResult<TResponse>` where `TResponse` is a dedicated response record defined in the same feature folder. Even simple results (e.g., a single ID) are wrapped in a response record for consistency, extensibility, and correct JSON serialization.
 
 ```csharp
+// Response record — lives in the same feature folder
+public record RegisterUserResponse(Guid UserId);
+
 // Command definition — immutable record
 public record RegisterUserCommand(
 	string Email,
 	string Username,
 	string Password,
 	string DisplayName)
-		: IRequest<Result<Guid>>;
+		: IRequest<TypedResult<RegisterUserResponse>>;
 
 // Handler — primary constructor + interface
 public class RegisterUserCommandHandler(
 	IUserRepository userRepository,
 	IPasswordHasher passwordHasher)
-		: IRequestHandler<RegisterUserCommand, Result<Guid>>
+		: IRequestHandler<RegisterUserCommand, TypedResult<RegisterUserResponse>>
 {
-	public async Task<Result<Guid>> HandleAsync(
+	public async Task<TypedResult<RegisterUserResponse>> Handle(
 		RegisterUserCommand request,
 		CancellationToken cancellationToken)
 	{
@@ -369,7 +386,7 @@ public class GetUserProfileQueryHandler(
 	IUserRepository userRepository)
 		: IRequestHandler<GetUserProfileQuery, UserProfileDto>
 {
-	public async Task<UserProfileDto> HandleAsync(
+	public async Task<UserProfileDto> Handle(
 		GetUserProfileQuery request,
 		CancellationToken cancellationToken)
 	{
@@ -421,7 +438,7 @@ public enum ResultErrorType
 
 - All I/O operations are async
 - Use `CancellationToken` in all async method signatures
-- All async methods must have the `Async` suffix (e.g., `FindByEmailAsync`, `HandleAsync`). This includes MediatR handlers — implement them as `HandleAsync`.
+- All async methods must have the `Async` suffix (e.g., `FindByEmailAsync`, `SaveChangesAsync`). **Exception:** MediatR handlers implement `Handle()` as required by the `IRequestHandler` interface contract. The async nature is communicated by the `Task<>` return type; the `Async` suffix is not used.
 
 ### Dependency Injection
 

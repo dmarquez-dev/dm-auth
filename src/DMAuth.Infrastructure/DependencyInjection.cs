@@ -1,4 +1,8 @@
+using DMAuth.Application.Common.Interfaces;
+using DMAuth.Domain.Interfaces;
 using DMAuth.Infrastructure.Persistence;
+using DMAuth.Infrastructure.Persistence.Repositories;
+using DMAuth.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +32,13 @@ public static class DependencyInjection
 	{
 		services.AddDbContext<DmAuthDbContext>(options =>
 			options.UseSqlServer(configuration.GetConnectionString("DmAuthConnection")));
+
+		services.AddScoped<IUnitOfWork>(provider =>
+			provider.GetRequiredService<DmAuthDbContext>());
+
+		services.AddScoped<IUserRepository, UserRepository>();
+
+		services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
 
 		return services;
 	}

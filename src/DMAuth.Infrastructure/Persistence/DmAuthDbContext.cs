@@ -1,4 +1,9 @@
-using DMAuth.Domain.Entities;
+using DMAuth.Application.Common.Interfaces;
+using DMAuth.Domain.Entities.AuthorizationCode;
+using DMAuth.Domain.Entities.Client;
+using DMAuth.Domain.Entities.Consent;
+using DMAuth.Domain.Entities.RefreshToken;
+using DMAuth.Domain.Entities.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace DMAuth.Infrastructure.Persistence;
@@ -11,7 +16,7 @@ namespace DMAuth.Infrastructure.Persistence;
 /// </param>
 public class DmAuthDbContext(
 	DbContextOptions<DmAuthDbContext> options)
-		: DbContext(options)
+		: DbContext(options), IUnitOfWork
 {
 	/// <summary>
 	///	User accounts.
@@ -42,6 +47,10 @@ public class DmAuthDbContext(
 	/// </summary>
 	public DbSet<Consent> Consents =>
 		Set<Consent>();
+
+	/// <inheritdoc />
+	Task IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken) =>
+		base.SaveChangesAsync(cancellationToken);
 
 	/// <inheritdoc />
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
