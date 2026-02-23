@@ -6,12 +6,12 @@ using DMAuth.Domain.Policies;
 using DMAuth.Domain.ValueObjects;
 using MediatR;
 
-namespace DMAuth.Application.Features.Users.RegisterUser;
+namespace DMAuth.Application.Features.Users.Register;
 
 /// <summary>
 ///		Handles user registration by validating uniqueness, hashing the password, and persisting the new account.
 /// </summary>
-public sealed class RegisterUserCommandHandler(
+public sealed class RegisterUserHandler(
 	IUserRepository userRepository,
 	IPasswordHasher passwordHasher,
 	IUnitOfWork unitOfWork)

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace DMAuth.Application.Common.Results;
 
 /// <summary>
@@ -40,6 +42,14 @@ public sealed partial class TypedResult<T>
 				errorType)
 	{
 	}
+
+	/// <summary>
+	///		Whether the operation succeeded.
+	///		When <see langword="true"/>, <see cref="Value"/> is guaranteed non-null.
+	/// </summary>
+	[MemberNotNullWhen(true, nameof(Value))]
+	public new bool IsSuccess =>
+		base.IsSuccess;
 
 	/// <summary>
 	///		The value returned on success, or default on failure.

@@ -1,17 +1,17 @@
 using FluentValidation;
 
-namespace DMAuth.Application.Features.Users.RegisterUser;
+namespace DMAuth.Application.Features.Users.Register;
 
 /// <summary>
 ///		Validates structural constraints on <see cref="RegisterUserCommand"/> before the handler runs.
 /// </summary>
-public sealed class RegisterUserCommandValidator
+public sealed class RegisterUserValidator
 	: AbstractValidator<RegisterUserCommand>
 {
 	/// <summary>
 	///		Configures validation rules for each field.
 	/// </summary>
-	public RegisterUserCommandValidator()
+	public RegisterUserValidator()
 	{
 		RuleFor(command =>
 			command.Email)
