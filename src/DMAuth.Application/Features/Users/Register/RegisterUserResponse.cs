@@ -1,4 +1,4 @@
-namespace DMAuth.Application.Features.Users.RegisterUser;
+namespace DMAuth.Application.Features.Users.Register;
 
 /// <summary>
 ///		The result of a successful user registration.
@@ -6,4 +6,5 @@ namespace DMAuth.Application.Features.Users.RegisterUser;
 /// <param name="UserId">
 ///		The identifier of the newly created user account.
 /// </param>
-public record RegisterUserResponse(Guid UserId);
+public record RegisterUserResponse(
+	Guid UserId);

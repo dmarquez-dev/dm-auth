@@ -1,6 +1,8 @@
 using DMAuth.Application;
 using DMAuth.Infrastructure;
+using DMAuth.Web.Common.CurrentUser;
 using DMAuth.Web.Common.Middleware;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.OpenApi;
 using Serilog;
 
@@ -14,8 +16,37 @@ builder.Host.UseSerilog((context, loggerConfig) =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Configure cookie authentication
+builder.Services
+	.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+	.AddCookie(options =>
+	{
+		options.Cookie.HttpOnly = true;
+		options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+		options.Cookie.SameSite = SameSiteMode.Strict;
+		options.Cookie.Name = "dm_auth_session";
+		options.SlidingExpiration = true;
+		options.ExpireTimeSpan = TimeSpan.FromHours(24);
+
+		// Return 401/403 instead of redirecting — this is an API, not a web app
+		options.Events.OnRedirectToLogin = context =>
+		{
+			context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+			return Task.CompletedTask;
+		};
+		options.Events.OnRedirectToAccessDenied = context =>
+		{
+			context.Response.StatusCode = StatusCodes.Status403Forbidden;
+			return Task.CompletedTask;
+		};
+	});
+
 // Add controllers
 builder.Services.AddControllers();
+
+// Register Web-layer services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // Configure CORS for React SPA
 builder.Services.AddCors(options =>
@@ -88,3 +119,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

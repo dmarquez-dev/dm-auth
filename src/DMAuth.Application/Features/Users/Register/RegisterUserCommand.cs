@@ -1,7 +1,7 @@
 using DMAuth.Application.Common.Results;
 using MediatR;
 
-namespace DMAuth.Application.Features.Users.RegisterUser;
+namespace DMAuth.Application.Features.Users.Register;
 
 /// <summary>
 ///		Command to register a new user account.
