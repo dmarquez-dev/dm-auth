@@ -1,4 +1,5 @@
 using DMAuth.Domain.Exceptions;
+using DMAuth.Domain.Policies;
 
 namespace DMAuth.Domain.ValueObjects;
 
@@ -13,24 +14,22 @@ public record Email
 	public string Value { get; }
 
 	/// <summary>
-	///		Creates a new email value object after validating format and normalizing to lowercase.
+	///		Creates a new email value object after validating it against <see cref="EmailPolicy"/>
+	///		and normalizing to lowercase.
 	/// </summary>
 	/// <param name="value">
 	///		The raw email address string to validate.
 	/// </param>
 	/// <exception cref="DomainException">
-	///		Thrown when the email is empty, missing '@', or exceeds 256 characters.
+	///		Thrown when the email violates any email policy rule.
 	/// </exception>
 	public Email(string value)
 	{
-		if (string.IsNullOrWhiteSpace(value))
-		{
-			throw new DomainException("Email cannot be empty.");
-		}
+		var result = EmailPolicy.Validate(value);
 
-		if (!value.Contains('@') || value.Length > 256)
+		if (!result.IsCompliant)
 		{
-			throw new DomainException("Email format is invalid.");
+			throw new DomainException(result.ViolationSummary);
 		}
 
 		Value = value.ToLowerInvariant();

@@ -37,6 +37,7 @@ public static class DependencyInjection
 			provider.GetRequiredService<DmAuthDbContext>());
 
 		services.AddScoped<IUserRepository, UserRepository>();
+		services.AddScoped<IClientRepository, ClientRepository>();
 
 		services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
 

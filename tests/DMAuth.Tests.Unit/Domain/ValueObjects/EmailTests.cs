@@ -50,7 +50,7 @@ public class EmailTests
 		var act = () => new Email(longEmail);
 
 		act.Should().Throw<DomainException>()
-			.WithMessage("Email format is invalid.");
+			.WithMessage("*must not exceed 256 characters*");
 	}
 
 	[Fact]

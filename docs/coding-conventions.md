@@ -237,7 +237,7 @@ All public types, members, and parameters should have XML documentation comments
 
 ```csharp
 /// <summary>
-///	Represents a user account in the system.
+///		Represents a user account in the system.
 /// </summary>
 public class User
 	: AuditableEntity
@@ -245,10 +245,10 @@ public class User
 }
 
 /// <summary>
-///	Base exception for domain rule violations.
+///		Base exception for domain rule violations.
 /// </summary>
 /// <param name="message">
-///	Description of the domain rule that was violated.
+///		Description of the domain rule that was violated.
 /// </param>
 public class DomainException(
 	string message)
@@ -431,8 +431,83 @@ public enum ResultErrorType
 ### Value Object Conventions
 
 - Immutable (record types or classes with readonly properties)
-- Validate in constructor; throw `DomainException` on invalid input
+- Delegate validation to the corresponding policy class in the constructor; throw `DomainException` if non-compliant
+- Apply any normalization (e.g., `.ToLowerInvariant()`) after the policy check passes
 - Override equality based on value, not reference
+
+```csharp
+public record Scope
+{
+	public string Value { get; }
+
+	public Scope(string value)
+	{
+		var result = ScopePolicy.Validate(value);
+
+		if (!result.IsCompliant)
+		{
+			throw new DomainException(result.ViolationSummary);
+		}
+
+		Value = value.ToLowerInvariant();
+	}
+}
+```
+
+### Policy Conventions
+
+- `static` classes with a `static PolicyResult Validate(string value)` method
+- Own the validation rules; value objects own the state
+- Independently testable and reusable outside value object construction
+  (e.g., consumed directly in FluentValidation validators to produce field-level errors
+  without constructing the value object)
+- Return `PolicyResult.Compliant()` on success or `PolicyResult.NonCompliant(violations)` on failure
+
+```csharp
+public static class ScopePolicy
+{
+	private static readonly HashSet<string> _allowedScopes = ...;
+
+	public static PolicyResult Validate(string value)
+	{
+		if (string.IsNullOrWhiteSpace(value))
+		{
+			return PolicyResult.NonCompliant(["Scope cannot be empty."]);
+		}
+
+		var violations = new List<string>();
+
+		if (!_allowedScopes.Contains(value.ToLowerInvariant()))
+		{
+			violations.Add($"Scope '{value}' is not recognized.");
+		}
+
+		return violations.Count is 0
+			? PolicyResult.Compliant()
+			: PolicyResult.NonCompliant(violations);
+	}
+}
+```
+
+#### Value Object / Policy Split
+
+Each domain concept with non-trivial validation has two classes:
+
+| Class | Role | Throws? |
+|-------|------|---------|
+| `FooPolicy` | Owns the rules; returns `PolicyResult` | No — returns result |
+| `Foo` (value object) | Owns the state; delegates to `FooPolicy` | Yes — throws `DomainException` |
+
+This separation enables policies to be consumed in two distinct contexts:
+
+- **Construction** — the value object constructor calls `FooPolicy.Validate()` and throws on failure
+- **Pre-validation** — FluentValidation validators or command handlers call `FooPolicy.Validate()` directly to surface user-friendly errors before attempting to construct the value object
+
+#### Policies validate input, not transformed output
+
+A policy is only created for the *input* side of a transformation, not for the value object that wraps the *output*. `PasswordPolicy` validates the plaintext password that the user supplies. `HashedPassword` wraps the BCrypt hash produced after that validation passes — it has no corresponding policy because the hash is always structurally valid by construction; the only invariant worth guarding is that the string is non-empty.
+
+Apply this rule when deciding whether a value object needs a policy: if the value object wraps data that was *derived or transformed* from already-validated input, a policy is unnecessary. If it wraps raw user-supplied or external input, a policy should own the rules.
 
 ### Async/Await
 
