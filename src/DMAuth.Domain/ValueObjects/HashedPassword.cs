@@ -16,7 +16,7 @@ public record HashedPassword
 	///		Creates a new hashed password value object.
 	/// </summary>
 	/// <param name="value">
-	///		The pre-hashed password string.
+	///		The hashed password string.
 	/// </param>
 	/// <exception cref="DomainException">
 	///		Thrown when the hashed password is empty.

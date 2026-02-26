@@ -20,7 +20,7 @@ public class LogoutUserTests(IntegrationTestFactory factory)
 			$"logout-{suffix}",
 			cancellationToken: TestCancellationToken);
 
-		var response = await client.PostAsync("/api/users/logout", content: null, TestCancellationToken);
+		var response = await client.PostAsync("/api/users/logout", null, TestCancellationToken);
 
 		response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 	}
@@ -33,7 +33,7 @@ public class LogoutUserTests(IntegrationTestFactory factory)
 			AllowAutoRedirect = false
 		});
 
-		var response = await client.PostAsync("/api/users/logout", content: null, TestCancellationToken);
+		var response = await client.PostAsync("/api/users/logout", null, TestCancellationToken);
 
 		response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 	}

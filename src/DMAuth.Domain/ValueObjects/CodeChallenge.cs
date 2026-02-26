@@ -1,4 +1,5 @@
 using DMAuth.Domain.Exceptions;
+using DMAuth.Domain.Policies;
 
 namespace DMAuth.Domain.ValueObjects;
 
@@ -13,19 +14,21 @@ public record CodeChallenge
 	public string Value { get; }
 
 	/// <summary>
-	///		Creates a new code challenge value object.
+	///		Creates a new code challenge value object after validating it against <see cref="CodeChallengePolicy"/>.
 	/// </summary>
 	/// <param name="value">
 	///		The code challenge string to validate.
 	/// </param>
 	/// <exception cref="DomainException">
-	///		Thrown when the code challenge is empty.
+	///		Thrown when the code challenge violates any PKCE policy rule.
 	/// </exception>
 	public CodeChallenge(string value)
 	{
-		if (string.IsNullOrWhiteSpace(value))
+		var result = CodeChallengePolicy.Validate(value);
+
+		if (!result.IsCompliant)
 		{
-			throw new DomainException("Code challenge cannot be empty.");
+			throw new DomainException(result.ViolationSummary);
 		}
 
 		Value = value;

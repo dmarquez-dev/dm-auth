@@ -6,7 +6,7 @@ namespace DMAuth.Domain.Entities.Client;
 ///		Represents an OAuth 2.0 client application.
 ///		Serves as an aggregate root for client-related operations.
 /// </summary>
-public class Client
+public partial class Client
 	: AuditableEntity
 {
 	/// <summary>

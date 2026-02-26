@@ -1,4 +1,5 @@
 using DMAuth.Domain.Exceptions;
+using DMAuth.Domain.Policies;
 
 namespace DMAuth.Domain.ValueObjects;
 
@@ -13,26 +14,21 @@ public record RedirectUri
 	public string Value { get; }
 
 	/// <summary>
-	///		Creates a new redirect URI value object after validating it is a valid absolute URI.
+	///		Creates a new redirect URI value object after validating it against <see cref="RedirectUriPolicy"/>.
 	/// </summary>
 	/// <param name="value">
 	///		The URI string to validate.
 	/// </param>
 	/// <exception cref="DomainException">
-	///		Thrown when the URI is empty or not a valid absolute URI.
+	///		Thrown when the URI violates any redirect URI policy rule.
 	/// </exception>
 	public RedirectUri(string value)
 	{
-		if (string.IsNullOrWhiteSpace(value))
-		{
-			throw new DomainException("Redirect URI cannot be empty.");
-		}
+		var result = RedirectUriPolicy.Validate(value);
 
-		if (!Uri.TryCreate(
-				value,
-				UriKind.Absolute, out _))
+		if (!result.IsCompliant)
 		{
-			throw new DomainException("Redirect URI must be a valid absolute URI.");
+			throw new DomainException(result.ViolationSummary);
 		}
 
 		Value = value;

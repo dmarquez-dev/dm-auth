@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using DMAuth.Application;
 using DMAuth.Infrastructure;
 using DMAuth.Web.Common.CurrentUser;
@@ -42,7 +43,9 @@ builder.Services
 	});
 
 // Add controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+	.AddJsonOptions(options =>
+		options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // Register Web-layer services
 builder.Services.AddHttpContextAccessor();
