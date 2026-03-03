@@ -67,6 +67,10 @@ public class AuthorizationCodeConfiguration
 			.IsRequired();
 
 		builder.Property(authCode =>
+			authCode.Nonce)
+			.HasMaxLength(256);
+
+		builder.Property(authCode =>
 			authCode.CreatedAt)
 			.IsRequired();
 

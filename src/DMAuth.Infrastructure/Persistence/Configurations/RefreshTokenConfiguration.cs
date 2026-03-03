@@ -52,9 +52,21 @@ public class RefreshTokenConfiguration
 			token.CreatedAt)
 			.IsRequired();
 
+		builder.Property(token =>
+			token.Scopes)
+			.HasMaxLength(512)
+			.IsRequired();
+
+		builder.Property(token =>
+			token.FamilyId)
+			.IsRequired();
+
 		builder.HasIndex(token =>
 			token.TokenHash)
 			.IsUnique();
+
+		builder.HasIndex(token =>
+			token.FamilyId);
 
 		builder.HasIndex(token =>
 			new { token.UserId, token.ClientId });

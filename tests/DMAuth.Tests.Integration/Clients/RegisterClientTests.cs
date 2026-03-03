@@ -59,7 +59,7 @@ public class RegisterClientTests(IntegrationTestFactory factory)
 		var body = await response.Content.ReadFromJsonAsync<RegisterClientResponse>(TestCancellationToken);
 
 		body!.ClientId.Should().NotBeEmpty();
-		body.OAuthClientId.Should().StartWith("dma_");
+		body.OAuthClientId.Should().StartWith("dmauth_");
 		body.ClientSecret.Should().BeNull();
 	}
 

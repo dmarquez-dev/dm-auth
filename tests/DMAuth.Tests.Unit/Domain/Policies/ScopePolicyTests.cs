@@ -9,7 +9,7 @@ public class ScopePolicyTests
 	[InlineData("openid")]
 	[InlineData("profile")]
 	[InlineData("email")]
-	[InlineData("offlineaccess")]
+	[InlineData("offline_access")]
 	public void Validate_WithRecognizedScope_ReturnsCompliant(string scope)
 	{
 		var result = ScopePolicy.Validate(scope);

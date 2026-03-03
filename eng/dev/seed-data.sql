@@ -37,7 +37,7 @@ INSERT INTO [Clients] (
     [CreatedAt]
 ) VALUES (
     NEWID(),
-    'test_client',
+    'dmauth_test_client',
     'Test Client',
     NULL,
     'Public',
