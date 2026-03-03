@@ -3,7 +3,7 @@ namespace DMAuth.Domain.Entities.RefreshToken;
 /// <summary>
 ///		Represents a database-backed refresh token used for token rotation and revocation.
 /// </summary>
-public class RefreshToken
+public partial class RefreshToken
 	: Entity
 {
 	/// <summary>
@@ -36,6 +36,18 @@ public class RefreshToken
 	/// </summary>
 	public string? ReplacedByToken { get; private set; }
 
+	/// <summary>
+	///		The space-delimited scopes granted by the original authorization.
+	///		Preserved across rotation so new access tokens carry the same scope.
+	/// </summary>
+	public string Scopes { get; private set; } = null!;
+
+	/// <summary>
+	///		The identifier shared by all tokens issued from the same authorization code exchange.
+	///		Used to revoke an entire token lineage when code reuse is detected.
+	/// </summary>
+	public Guid FamilyId { get; private set; }
+
 	private RefreshToken() { }
 
 	/// <summary>
@@ -53,15 +65,25 @@ public class RefreshToken
 	/// <param name="expiresAt">
 	///		When this token should expire.
 	/// </param>
+	/// <param name="scopes">
+	///		The space-delimited scopes granted by the original authorization.
+	/// </param>
+	/// <param name="familyId">
+	///		The token family identifier, set to the authorization code's ID at first exchange.
+	/// </param>
 	public RefreshToken(
 		string tokenHash,
 		Guid userId,
 		Guid clientId,
-		DateTimeOffset expiresAt)
+		DateTimeOffset expiresAt,
+		string scopes,
+		Guid familyId)
 	{
 		TokenHash = tokenHash;
 		UserId = userId;
 		ClientId = clientId;
 		ExpiresAt = expiresAt;
+		Scopes = scopes;
+		FamilyId = familyId;
 	}
 }

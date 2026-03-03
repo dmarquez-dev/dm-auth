@@ -22,7 +22,7 @@ namespace DMAuth.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.AuthorizationCode", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.AuthorizationCode.AuthorizationCode", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -53,6 +53,10 @@ namespace DMAuth.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("Nonce")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("RedirectUri")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -81,7 +85,7 @@ namespace DMAuth.Infrastructure.Migrations
                     b.ToTable("AuthorizationCodes", (string)null);
                 });
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.Client", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.Client.Client", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -139,7 +143,7 @@ namespace DMAuth.Infrastructure.Migrations
                     b.ToTable("Clients", (string)null);
                 });
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.Consent", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.Consent.Consent", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -173,7 +177,7 @@ namespace DMAuth.Infrastructure.Migrations
                     b.ToTable("Consents", (string)null);
                 });
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.RefreshToken", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.RefreshToken.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -189,12 +193,20 @@ namespace DMAuth.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ReplacedByToken")
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Scopes")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
@@ -208,6 +220,8 @@ namespace DMAuth.Infrastructure.Migrations
 
                     b.HasIndex("ClientId");
 
+                    b.HasIndex("FamilyId");
+
                     b.HasIndex("TokenHash")
                         .IsUnique();
 
@@ -216,7 +230,7 @@ namespace DMAuth.Infrastructure.Migrations
                     b.ToTable("RefreshTokens", (string)null);
                 });
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.User", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.User.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -266,54 +280,54 @@ namespace DMAuth.Infrastructure.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.AuthorizationCode", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.AuthorizationCode.AuthorizationCode", b =>
                 {
-                    b.HasOne("DMAuth.Domain.Entities.Client", null)
+                    b.HasOne("DMAuth.Domain.Entities.Client.Client", null)
                         .WithMany()
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DMAuth.Domain.Entities.User", null)
+                    b.HasOne("DMAuth.Domain.Entities.User.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.Client", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.Client.Client", b =>
                 {
-                    b.HasOne("DMAuth.Domain.Entities.User", null)
+                    b.HasOne("DMAuth.Domain.Entities.User.User", null)
                         .WithMany()
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.Consent", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.Consent.Consent", b =>
                 {
-                    b.HasOne("DMAuth.Domain.Entities.Client", null)
+                    b.HasOne("DMAuth.Domain.Entities.Client.Client", null)
                         .WithMany()
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DMAuth.Domain.Entities.User", null)
+                    b.HasOne("DMAuth.Domain.Entities.User.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DMAuth.Domain.Entities.RefreshToken", b =>
+            modelBuilder.Entity("DMAuth.Domain.Entities.RefreshToken.RefreshToken", b =>
                 {
-                    b.HasOne("DMAuth.Domain.Entities.Client", null)
+                    b.HasOne("DMAuth.Domain.Entities.Client.Client", null)
                         .WithMany()
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DMAuth.Domain.Entities.User", null)
+                    b.HasOne("DMAuth.Domain.Entities.User.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

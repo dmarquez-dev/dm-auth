@@ -6,7 +6,7 @@ namespace DMAuth.Domain.Entities.AuthorizationCode;
 /// <summary>
 ///		Represents a short-lived authorization code issued during the OAuth 2.0 authorization code flow.
 /// </summary>
-public class AuthorizationCode
+public partial class AuthorizationCode
 	: Entity
 {
 	/// <summary>
@@ -54,6 +54,12 @@ public class AuthorizationCode
 	/// </summary>
 	public DateTimeOffset? UsedAt { get; private set; }
 
+	/// <summary>
+	///		The OIDC nonce provided in the authorization request, or null if not supplied.
+	///		Included in the ID token to bind it to the originating authorization request.
+	/// </summary>
+	public string? Nonce { get; private set; }
+
 	private AuthorizationCode() { }
 
 	/// <summary>
@@ -83,6 +89,9 @@ public class AuthorizationCode
 	/// <param name="expiresAt">
 	///		When this authorization code should expire.
 	/// </param>
+	/// <param name="nonce">
+	///		The OIDC nonce from the authorization request, or null if not provided.
+	/// </param>
 	public AuthorizationCode(
 		string codeHash,
 		Guid userId,
@@ -91,7 +100,8 @@ public class AuthorizationCode
 		string scopes,
 		CodeChallenge codeChallenge,
 		CodeChallengeMethod codeChallengeMethod,
-		DateTimeOffset expiresAt)
+		DateTimeOffset expiresAt,
+		string? nonce = null)
 	{
 		CodeHash = codeHash;
 		UserId = userId;
@@ -101,5 +111,6 @@ public class AuthorizationCode
 		CodeChallenge = codeChallenge;
 		CodeChallengeMethod = codeChallengeMethod;
 		ExpiresAt = expiresAt;
+		Nonce = nonce;
 	}
 }

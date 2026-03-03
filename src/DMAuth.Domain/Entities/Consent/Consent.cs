@@ -3,7 +3,7 @@ namespace DMAuth.Domain.Entities.Consent;
 /// <summary>
 ///		Represents a user's consent granting specific scopes to a client application.
 /// </summary>
-public class Consent
+public partial class Consent
 	: Entity
 {
 	/// <summary>

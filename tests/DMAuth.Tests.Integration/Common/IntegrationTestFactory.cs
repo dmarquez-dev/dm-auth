@@ -1,3 +1,4 @@
+using DMAuth.Application.Common.Settings;
 using DMAuth.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 
 namespace DMAuth.Tests.Integration.Common;
 
@@ -21,6 +23,19 @@ namespace DMAuth.Tests.Integration.Common;
 public class IntegrationTestFactory : WebApplicationFactory<Program>
 {
 	private readonly string _databaseName = Guid.NewGuid().ToString();
+
+	/// <summary>
+	///		A self-signed RSA private key generated once per test session for JWT signing.
+	///		Shared across all factory instances so the key does not have to be re-generated
+	///		for every test class fixture.
+	/// </summary>
+	private static readonly string TestRsaPrivateKeyPem = CreateTestRsaKey();
+
+	private static string CreateTestRsaKey()
+	{
+		using var rsa = RSA.Create(2048);
+		return rsa.ExportRSAPrivateKeyPem();
+	}
 
 	protected override void ConfigureWebHost(IWebHostBuilder builder)
 	{
@@ -42,6 +57,18 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
 			services.Configure<CookieAuthenticationOptions>(
 				CookieAuthenticationDefaults.AuthenticationScheme,
 				options => options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest);
+
+			// Replace the production JwtSettings singleton with a test-specific configuration
+			// that has a valid RSA key so TokenService can sign JWTs during token endpoint tests.
+			services.RemoveAll<JwtSettings>();
+			services.AddSingleton(new JwtSettings
+			{
+				RsaPrivateKeyPem = TestRsaPrivateKeyPem,
+				Issuer = "https://test.dmauth.local",
+				Audience = "https://test.dmauth.local",
+				AccessTokenExpiryMinutes = 15,
+				IdTokenExpiryMinutes = 60
+			});
 		});
 
 		// Suppress logging noise during test runs

@@ -79,7 +79,7 @@ public sealed class RegisterClientHandler(
 
 		do
 		{
-			clientId = "dma_" + Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(16));
+			clientId = "dmauth_" + Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(16));
 		}
 		while (await clientRepository.ExistsByClientIdAsync(
 			clientId,

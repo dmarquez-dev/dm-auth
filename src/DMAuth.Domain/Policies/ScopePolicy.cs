@@ -7,13 +7,15 @@ namespace DMAuth.Domain.Policies;
 /// </summary>
 public static class ScopePolicy
 {
-	private static readonly HashSet<string> _allowedScopes = Enum
-		.GetValues<ScopeType>()
-		.Select(scope =>
-			scope
-				.ToString()
-				.ToLowerInvariant())
-		.ToHashSet();
+	private static readonly Dictionary<ScopeType, string> _scopeNames = new()
+	{
+		[ScopeType.OpenId] = "openid",
+		[ScopeType.Profile] = "profile",
+		[ScopeType.Email] = "email",
+		[ScopeType.OfflineAccess] = "offline_access",
+	};
+
+	private static readonly HashSet<string> _allowedScopes = _scopeNames.Values.ToHashSet();
 
 	/// <summary>
 	///		Validates a scope string against all recognized scope types.

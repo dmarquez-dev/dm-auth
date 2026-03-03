@@ -98,7 +98,7 @@ public class RegisterClientHandlerTests
 
 		result.IsSuccess.Should().BeTrue();
 		result.Value!.ClientId.Should().NotBeEmpty();
-		result.Value.OAuthClientId.Should().StartWith("dma_");
+		result.Value.OAuthClientId.Should().StartWith("dmauth_");
 	}
 
 	[Fact]
