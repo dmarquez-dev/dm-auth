@@ -21,21 +21,34 @@ public sealed class TokenService : ITokenService
 
 	/// <summary>
 	///		Initializes the token service and loads the RSA private key from configuration.
+	///		The <c>kid</c> is computed via the RFC 7638 JWK Thumbprint so it matches the
+	///		value advertised by the JWKS endpoint, which derives it from the same formula.
 	/// </summary>
 	/// <param name="settings">
-	///		JWT configuration including the PEM-encoded RSA private key.
+	///		JWT configuration including the PEM-encoded RSA private key, issuer, audience,
+	///		and expiry settings.
 	/// </param>
 	public TokenService(JwtSettings settings)
 	{
 		_settings = settings;
 
 		var rsa = RSA.Create();
-		rsa.ImportFromPem(_settings.RsaPrivateKeyPem);
+		rsa.ImportFromPem(settings.RsaPrivateKeyPem);
 
-		_signingKey = new RsaSecurityKey(rsa);
+		_signingKey = new RsaSecurityKey(rsa) { KeyId = ComputeKeyId(rsa) };
 		_signingCredentials = new SigningCredentials(
 			_signingKey,
 			SecurityAlgorithms.RsaSha256);
+	}
+
+	private static string ComputeKeyId(RSA rsa)
+	{
+		var parameters = rsa.ExportParameters(includePrivateParameters: false);
+		var n = Base64UrlEncoder.Encode(parameters.Modulus!);
+		var e = Base64UrlEncoder.Encode(parameters.Exponent!);
+		var thumbprintJson = $"{{\"e\":\"{e}\",\"kty\":\"RSA\",\"n\":\"{n}\"}}";
+		var hash = SHA256.HashData(Encoding.UTF8.GetBytes(thumbprintJson));
+		return Base64UrlEncoder.Encode(hash);
 	}
 
 	/// <inheritdoc />

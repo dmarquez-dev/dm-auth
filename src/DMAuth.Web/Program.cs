@@ -1,9 +1,14 @@
+using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using DMAuth.Application;
+using DMAuth.Application.Common.Settings;
 using DMAuth.Infrastructure;
 using DMAuth.Web.Common.CurrentUser;
 using DMAuth.Web.Common.Middleware;
+using DMAuth.Web.Common.SigningKey;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Serilog;
 
@@ -17,9 +22,10 @@ builder.Host.UseSerilog((context, loggerConfig) =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Configure cookie authentication
+// Configure authentication: cookies for the dashboard session, JWT Bearer for OAuth endpoints
 builder.Services
 	.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+	.AddJwtBearer()
 	.AddCookie(options =>
 	{
 		options.Cookie.HttpOnly = true;
@@ -50,6 +56,37 @@ builder.Services.AddControllers()
 // Register Web-layer services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddSingleton<ISigningKeyProvider, SigningKeyProvider>();
+
+// Configure JWT Bearer using ISigningKeyProvider so the RSA key is imported only once.
+// Reconstructs a public-only RsaSecurityKey from the Base64Url-encoded parameters
+// that SigningKeyProvider already computed at startup.
+builder.Services
+	.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+	.Configure<ISigningKeyProvider, JwtSettings>((options, signingKeyProvider, jwtSettings) =>
+	{
+		// Preserve JWT claim names as-is (e.g. "sub" stays "sub", not ClaimTypes.NameIdentifier).
+		options.MapInboundClaims = false;
+
+		var rsaParams = new RSAParameters
+		{
+			Modulus  = Base64UrlEncoder.DecodeBytes(signingKeyProvider.Modulus),
+			Exponent = Base64UrlEncoder.DecodeBytes(signingKeyProvider.Exponent),
+		};
+		var publicKey = new RsaSecurityKey(RSA.Create(rsaParams))
+		{
+			KeyId = signingKeyProvider.KeyId,
+		};
+
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidIssuer      = jwtSettings.Issuer,
+			ValidAudience    = jwtSettings.Audience,
+			IssuerSigningKey = publicKey,
+			ValidateLifetime = true,
+			ClockSkew        = TimeSpan.Zero,
+		};
+	});
 
 // Configure CORS for React SPA
 builder.Services.AddCors(options =>
