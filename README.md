@@ -46,7 +46,7 @@ Expected: `Build succeeded. 0 Error(s)`
 
 #### Option A — Setup script (recommended)
 
-The script verifies connectivity, syncs `appsettings.Development.json`, applies the migration, and seeds in one step.
+The script verifies SQL connectivity, syncs `appsettings.Development.json`, generates an RSA signing key in user secrets (skipped on reruns), applies the migration, and seeds in one step.
 
 ```powershell
 .\eng\dev\setup.ps1 -Server "localhost\dev"
@@ -60,7 +60,17 @@ The script verifies connectivity, syncs `appsettings.Development.json`, applies 
 
 #### Option B — Manual steps
 
-**a. Apply the migration**
+**a. Generate the RSA signing key**
+
+```bash
+dotnet user-secrets init --project src/DMAuth.Web
+pem=$(openssl genrsa 2048 2>/dev/null)
+dotnet user-secrets set "Jwt:RsaPrivateKeyPem" "$pem" --project src/DMAuth.Web
+```
+
+`openssl` ships with Git for Windows. The key is stored in your local user secrets store and is never committed to source control.
+
+**b. Apply the migration**
 
 ```bash
 dotnet ef database update \
@@ -70,7 +80,7 @@ dotnet ef database update \
 
 > `appsettings.Development.json` is pre-configured for `Server=localhost\dev`. If your instance differs, update the `DmAuthConnection` connection string before running this command.
 
-**b. Seed the database**
+**c. Seed the database**
 
 ```bash
 sqlcmd -S "localhost\dev" -d DMAuth -E -i eng/dev/seed-data.sql
@@ -81,10 +91,10 @@ This inserts a test user (`test@example.com` / `testpassword123`) and a public t
 ### 4. Start the API
 
 ```bash
-dotnet run --project src/DMAuth.Web
+dotnet run --project src/DMAuth.Web --launch-profile https
 ```
 
-The API will be available at `https://localhost:5001`. Swagger UI is available at `https://localhost:5001/swagger` in development.
+The API will be available at `https://localhost:7259`. Swagger UI is available at `https://localhost:7259/swagger` in development.
 
 ## Project Structure
 
@@ -251,11 +261,10 @@ Key settings in `appsettings.json`:
     "DmAuthConnection": "Server=...;Database=DMAuth;..."
   },
   "Jwt": {
-    "Issuer": "https://localhost:5001",
+    "Issuer": "https://localhost:7259",
+    "Audience": "https://localhost:7259",
     "AccessTokenExpiryMinutes": 15,
-    "RefreshTokenExpiryDays": 30,
-    "IdTokenExpiryMinutes": 60,
-    "SigningKeyPath": "./keys/signing-key.json"
+    "IdTokenExpiryMinutes": 60
   },
   "AuthorizationCode": {
     "ExpiryMinutes": 5
@@ -270,7 +279,7 @@ Key settings in `appsettings.json`:
 }
 ```
 
-For production, set `KeyVault:Enabled` to `true` and configure the vault URI. The signing key will be retrieved from Azure Key Vault instead of the local file.
+`Jwt:RsaPrivateKeyPem` is a secret and is **never stored in `appsettings.json`**. In development it is stored in user secrets (set automatically by `setup.ps1`). In production it should be injected via an environment variable or retrieved from Azure Key Vault.
 
 ## Testing
 
@@ -305,6 +314,8 @@ dotnet test tests/DMAuth.Tests.Integration
 | `KeyVault__Enabled` | `true` |
 | `KeyVault__VaultUri` | Key Vault URI |
 | `Jwt__Issuer` | Production issuer URL |
+| `Jwt__Audience` | Expected audience for access tokens |
+| `Jwt__RsaPrivateKeyPem` | PEM-encoded RSA private key (use Key Vault instead when possible) |
 | `Cors__AllowedOrigins__0` | Production SPA URL |
 
 ## Security

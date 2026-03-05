@@ -119,3 +119,37 @@ Implement refresh token rotation: every time a refresh token is used, a new refr
 - **Long-lived non-rotating refresh tokens:** Rejected — a stolen token grants persistent access for the full lifetime with no detection mechanism
 - **Short-lived refresh tokens without rotation:** Rejected — forces frequent re-authentication, degrading UX without the security benefit of reuse detection
 - **Refresh token binding (DPoP):** A stronger mechanism that binds tokens to a specific client key pair. Deferred to post-MVP due to implementation complexity and limited client library support
+
+---
+
+## ADR-006: OIDC Discovery Endpoint as a Web-Layer-Only Concern
+
+**Status:** Accepted
+
+**Context:**
+The OIDC Discovery endpoint (`GET /.well-known/openid-configuration`) returns a provider metadata document defined by OpenID Connect Discovery 1.0 and RFC 8414. This document is pure protocol metadata — issuer URL, endpoint locations, supported algorithms, scopes, and grant types — with no domain logic, no database interaction, and no user-specific data.
+
+**Decision:**
+Implement the discovery endpoint entirely in the Web layer (`DiscoveryController`), with no Application-layer handler or MediatR dispatch. The controller reads directly from `JwtSettings` (issuer URL) and `OAuthSettings` (supported scopes) to construct the response.
+
+**Consequences:**
+- No unnecessary MediatR overhead for a static metadata response
+- Endpoint URL derivation is always consistent: every URL in the document is constructed as `{Issuer.TrimEnd('/')}/connect/{path}`, so the document can never advertise endpoints that point to a different host than the configured issuer
+- `ScopePolicy` (domain) and `OAuthSettings.SupportedScopes` (protocol) are kept intentionally separate — `ScopePolicy` enforces what the server *accepts*; the discovery document advertises what the server *supports publicly*. These sets are expected to match in production but are not coupled in code, allowing a scope to be accepted for backward compatibility without being re-advertised, or to be staged gradually before being published
+
+**Keeping the discovery document accurate — changes required for future capabilities:**
+
+| Capability | Field(s) to update | Notes |
+|---|---|---|
+| **Add a new scope** | `scopes_supported` (via `OAuthSettings.SupportedScopes`) | Also add the scope to `ScopePolicy._scopeNames` so domain validation accepts it |
+| **Retire a scope** | Remove from `OAuthSettings.SupportedScopes` | Keep in `ScopePolicy` for backward compatibility until existing tokens expire |
+| **Confidential client support** | `token_endpoint_auth_methods_supported` | Add `"client_secret_post"` and/or `"client_secret_basic"`. Also expose `"client_secret_jwt"` or `"private_key_jwt"` if mTLS or JWT-based auth is supported |
+| **Token introspection (RFC 7662)** | Add `introspection_endpoint` field to `DiscoveryDocument` | Requires a new `POST /connect/introspect` endpoint and an introspection handler |
+| **Pushed Authorization Requests (PAR, RFC 9126)** | Add `pushed_authorization_request_endpoint`, `require_pushed_authorization_requests` | Requires a new `POST /connect/par` endpoint |
+| **JWKS key rotation** | `jwks_uri` already advertised — no document change needed | The JWKS endpoint (task 5.2) must support multiple keys; tokens must include a `kid` header matching a key in the set |
+| **New response types (implicit, hybrid)** | `response_types_supported` | Not recommended — these flows are deprecated in OAuth 2.1; add only if a specific legacy client requires them |
+| **New ID token signing algorithms** | `id_token_signing_alg_values_supported` | Add the algorithm string (e.g., `"ES256"`) when a new key type is introduced in the signing key infrastructure |
+
+**Alternatives Considered:**
+- **Application-layer handler via MediatR:** Rejected — the discovery document contains no domain logic, no validation, and requires no database access. Routing it through the MediatR pipeline adds ceremony with no benefit
+- **Expose `ScopePolicy.AllowedScopes` and use it directly in the controller:** Rejected — `ScopePolicy` is a domain enforcer, not a configuration source. Coupling the discovery document to the domain policy blurs the boundary between what the server *accepts* (a domain invariant) and what it *advertises* (a protocol concern). These sets are expected to be equal but are conceptually distinct and should be maintained independently

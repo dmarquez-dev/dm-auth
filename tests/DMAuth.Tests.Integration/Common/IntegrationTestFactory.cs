@@ -1,3 +1,7 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using DMAuth.Application.Common.Settings;
 using DMAuth.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -10,8 +14,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using System.Net.Http.Json;
-using System.Security.Cryptography;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DMAuth.Tests.Integration.Common;
 
@@ -73,6 +76,36 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
 
 		// Suppress logging noise during test runs
 		builder.ConfigureLogging(logging => logging.ClearProviders());
+	}
+
+	/// <summary>
+	///		Creates a JWT access token signed with the test RSA key but with an expiry one hour
+	///		in the past. Use this to verify that protected endpoints correctly reject expired tokens.
+	/// </summary>
+	public string CreateExpiredAccessToken(Guid userId, string scope = "openid")
+	{
+		var rsa = RSA.Create();
+		rsa.ImportFromPem(TestRsaPrivateKeyPem);
+
+		var credentials = new SigningCredentials(
+			new RsaSecurityKey(rsa),
+			SecurityAlgorithms.RsaSha256);
+
+		var token = new JwtSecurityToken(
+			issuer: "https://test.dmauth.local",
+			audience: "https://test.dmauth.local",
+			claims:
+			[
+				new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+				new Claim("scope", scope),
+			],
+			notBefore: DateTime.UtcNow.AddHours(-2),
+			expires: DateTime.UtcNow.AddHours(-1),
+			signingCredentials: credentials);
+
+		var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+		rsa.Dispose();
+		return tokenString;
 	}
 
 	/// <summary>

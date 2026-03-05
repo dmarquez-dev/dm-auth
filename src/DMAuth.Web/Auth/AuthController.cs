@@ -1,6 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using DMAuth.Application.Features.Auth.Authorize;
 using DMAuth.Application.Features.Auth.ExchangeToken;
 using DMAuth.Application.Features.Auth.GetAuthorizationDetails;
+using DMAuth.Application.Features.Auth.GetUserInfo;
 using DMAuth.Application.Features.Auth.GrantConsent;
 using DMAuth.Application.Features.Auth.RotateToken;
 using DMAuth.Application.Features.Auth.RevokeToken;
@@ -8,6 +10,7 @@ using DMAuth.Web.Auth.Requests;
 using DMAuth.Web.Common;
 using DMAuth.Web.Common.CurrentUser;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
@@ -229,6 +232,39 @@ public sealed class AuthController(
 		}
 
 		return Ok();
+	}
+
+	/// <summary>
+	///		Returns OIDC UserInfo claims for the authenticated user.
+	///		Requires a valid Bearer access token; claims returned depend on the token's granted scopes.
+	/// </summary>
+	/// <param name="cancellationToken">
+	///		A token to cancel the operation.
+	/// </param>
+	[HttpGet("userinfo")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+	[ProducesResponseType<UserInfoResponse>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> UserInfoAsync(CancellationToken cancellationToken)
+	{
+		var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+		if (!Guid.TryParse(sub, out var userId))
+		{
+			return Unauthorized(new { message = "Invalid or missing sub claim." });
+		}
+
+		var scope = User.FindFirst("scope")?.Value ?? string.Empty;
+		var query = new GetUserInfoQuery(userId, scope);
+		var result = await Mediator.Send(query, cancellationToken);
+
+		if (!result.IsSuccess)
+		{
+			return MapError(result);
+		}
+
+		return Ok(result.Value);
 	}
 
 	private static string BuildConsentUrl(AuthorizeResponse validated)
