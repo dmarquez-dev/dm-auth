@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
+using Azure.Identity;
 using DMAuth.Application;
 using DMAuth.Application.Common.Settings;
 using DMAuth.Infrastructure;
@@ -14,12 +15,26 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Bootstrap Azure Key Vault configuration before any service registration reads from IConfiguration.
+// DefaultAzureCredential uses az login in dev and Managed Identity in production automatically.
+var vaultUri = builder.Configuration.GetConnectionString("KeyVault");
+if (string.IsNullOrEmpty(vaultUri))
+{
+	throw new InvalidOperationException("Key Vault connection string cannot be empty.");
+}
+
+builder.Configuration.AddAzureKeyVault(
+	new Uri(vaultUri),
+	new DefaultAzureCredential());
+
 // Configure Serilog
 builder.Host.UseSerilog((context, loggerConfig) =>
 	loggerConfig.ReadFrom.Configuration(context.Configuration));
 
 // Add layer services
 builder.Services.AddApplication();
+builder.Services.AddApplicationInsightsTelemetry(options =>
+	options.ConnectionString = builder.Configuration.GetConnectionString("ApplicationInsights"));
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // Configure authentication: cookies for the dashboard session, JWT Bearer for OAuth endpoints

@@ -105,12 +105,12 @@ Unit tests (Tasks 2.11–2.13, 3.7–3.8, 4.12–4.14, 5.4) should be written al
 
 ---
 
-## Epic 6: JWT Signing Key Management
+## Epic 6: Azure Key Vault Configuration Bootstrap
 
 | ID | Task | Description | Status | Dependencies |
 |----|------|-------------|--------|--------------|
-| 6.1 | Implement development key management | On first startup (dev only), auto-generate RSA 2048-bit key pair if not present. Store in local JSON file (keys/ directory, gitignored). Load at startup for token signing and JWKS endpoint. | TODO | 1.4 |
-| 6.2 | Implement Azure Key Vault integration | Create `KeyVaultService` to retrieve RSA signing key from Azure Key Vault. Cache key in memory with configurable TTL. Support key rotation via Key Vault key versioning. Configuration toggle: use local key (dev) vs Key Vault (prod) based on `KeyVault:Enabled` setting. | TODO | 6.1, 1.3 |
+| 6.1 | Provision Azure infrastructure per environment | Per environment (dev + prod): provision Azure SQL Server + database (dev: free tier, prod: basic tier), Azure Key Vault, and Application Insights workspace. Populate each vault with the three required secrets (`Jwt--RsaPrivateKeyPem`, `ConnectionStrings--DmAuth`, `ConnectionStrings--ApplicationInsights`). Grant developers the `Key Vault Secrets User` RBAC role on the dev vault. Grant the App Service Managed Identity the same role on the prod vault. | TODO | — |
+| 6.2 | Key Vault configuration bootstrap | Add `AddAzureKeyVault` bootstrap to `Program.cs` using `DefaultAzureCredential` (dev: `az login`, prod: Managed Identity). Secrets use the `--` double-dash convention so they map automatically onto `IConfiguration`. Add Application Insights telemetry via `AddApplicationInsightsTelemetry`; configure Serilog Application Insights sink in `appsettings` per environment (Error in dev, Warning in prod). Update `setup.ps1` to use `-VaultName`, retrieve connection string from KV for migrations. | DONE | 6.1, 1.3 |
 
 ---
 
