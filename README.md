@@ -15,7 +15,8 @@ DM Auth provides user identity management and enables external client applicatio
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [SQL Server](https://www.microsoft.com/en-us/sql-server/) (local instance or Docker)
+- [PowerShell 7.1+](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell) — required by `setup.ps1` (`??` operator); the `SqlServer` module is installed automatically on first run
+- [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) — for Key Vault secret access in development
 - [Node.js 18+](https://nodejs.org/) (for the React SPA)
 - [Docker](https://www.docker.com/) (optional, for local SQL Server)
 
@@ -24,8 +25,8 @@ DM Auth provides user identity management and enables external client applicatio
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) — verify with `dotnet --version` (should show `10.0.x`)
-- SQL Server with a local instance accessible via Windows Authentication (`localhost\dev` by default)
-- `sqlcmd` CLI on your PATH (ships with SQL Server and SSMS)
+- [PowerShell 7.1+](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell) — verify with `pwsh --version`; the `SqlServer` module is installed automatically by `setup.ps1` on first run
+- [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) — authenticate with `az login`
 
 ### 1. Clone the Repository
 
@@ -42,48 +43,47 @@ dotnet build
 
 Expected: `Build succeeded. 0 Error(s)`
 
-### 3. Set Up the Database
+### 3. Set Up the Development Environment
+
+All sensitive secrets (RSA signing key, database connection string, Application Insights connection string) are stored in the team's dev Azure Key Vault. No user secrets or local files are needed.
+
+#### Prerequisites
+
+1. **Azure CLI authentication** — run `az login` and sign in with your organizational account.
+2. **Key Vault role assignment** — a team lead must assign you the `Key Vault Secrets User` role on the dev Key Vault.
+3. **Update `KeyVault:VaultUri`** — set `KeyVault:VaultUri` in `appsettings.Development.json` to the dev vault URI (e.g. `https://dmauth-dev.vault.azure.net/`).
 
 #### Option A — Setup script (recommended)
 
-The script verifies SQL connectivity, syncs `appsettings.Development.json`, generates an RSA signing key in user secrets (skipped on reruns), applies the migration, and seeds in one step.
+The script verifies Azure CLI authentication, retrieves the DB connection string from Key Vault, applies the EF Core migration, and seeds the database.
 
 ```powershell
-.\eng\dev\setup.ps1 -Server "localhost\dev"
-```
-
-`-Server` defaults to `localhost\dev` if omitted. Pass a different value to target another instance:
-
-```powershell
-.\eng\dev\setup.ps1 -Server "localhost\sqlexpress"
+.\eng\dev\setup.ps1 -VaultName "dmauth-dev"
 ```
 
 #### Option B — Manual steps
 
-**a. Generate the RSA signing key**
+**a. Verify Azure CLI authentication**
 
 ```bash
-dotnet user-secrets init --project src/DMAuth.Web
-pem=$(openssl genrsa 2048 2>/dev/null)
-dotnet user-secrets set "Jwt:RsaPrivateKeyPem" "$pem" --project src/DMAuth.Web
+az login
+az account show
 ```
-
-`openssl` ships with Git for Windows. The key is stored in your local user secrets store and is never committed to source control.
 
 **b. Apply the migration**
 
 ```bash
+CS=$(az keyvault secret show --vault-name dmauth-dev --name "ConnectionStrings--DmAuth" --query "value" -o tsv)
 dotnet ef database update \
   --project src/DMAuth.Infrastructure \
-  --startup-project src/DMAuth.Web
+  --startup-project src/DMAuth.Web \
+  --connection "$CS"
 ```
-
-> `appsettings.Development.json` is pre-configured for `Server=localhost\dev`. If your instance differs, update the `DmAuthConnection` connection string before running this command.
 
 **c. Seed the database**
 
 ```bash
-sqlcmd -S "localhost\dev" -d DMAuth -E -i eng/dev/seed-data.sql
+sqlcmd -S <server> -d DMAuth -E -i eng/dev/seed-data.sql
 ```
 
 This inserts a test user (`test@example.com` / `testpassword123`) and a public test client (`test_client`).
@@ -253,16 +253,27 @@ DM Auth implements the Authorization Code flow with PKCE (RFC 7636):
 
 ## Configuration
 
-Key settings in `appsettings.json`:
+All sensitive secrets are stored in Azure Key Vault using the `--` double-dash naming convention, which maps directly onto the ASP.NET Core `IConfiguration` hierarchy (e.g. `ConnectionStrings--DmAuth` → `ConnectionStrings:DmAuth`).
+
+### Key Vault Secrets
+
+| Key Vault secret name | Maps to `IConfiguration` key | Description |
+|---|---|---|
+| `Jwt--RsaPrivateKeyPem` | `Jwt:RsaPrivateKeyPem` | RSA 2048-bit private key (PEM-encoded) used to sign JWTs |
+| `ConnectionStrings--DmAuth` | `ConnectionStrings:DmAuth` | Azure SQL connection string |
+| `ConnectionStrings--ApplicationInsights` | `ConnectionStrings:ApplicationInsights` | Application Insights connection string |
+
+### Non-secret settings
+
+The only non-secret Key Vault setting is `KeyVault:VaultUri`, which tells the app where to find its vault. Set this in `appsettings.Development.json` per-environment and override it in production via an App Service Application Setting (`KeyVault__VaultUri`).
+
+Non-sensitive settings kept in `appsettings.json`:
 
 ```json
 {
-  "ConnectionStrings": {
-    "DmAuthConnection": "Server=...;Database=DMAuth;..."
-  },
   "Jwt": {
-    "Issuer": "https://localhost:7259",
-    "Audience": "https://localhost:7259",
+    "Issuer": "",
+    "Audience": "",
     "AccessTokenExpiryMinutes": 15,
     "IdTokenExpiryMinutes": 60
   },
@@ -270,16 +281,13 @@ Key settings in `appsettings.json`:
     "ExpiryMinutes": 5
   },
   "Cors": {
-    "AllowedOrigins": ["http://localhost:5173"]
+    "AllowedOrigins": []
   },
   "KeyVault": {
-    "Enabled": false,
-    "VaultUri": "https://dmauth-kv.vault.azure.net/"
+    "VaultUri": ""
   }
 }
 ```
-
-`Jwt:RsaPrivateKeyPem` is a secret and is **never stored in `appsettings.json`**. In development it is stored in user secrets (set automatically by `setup.ps1`). In production it should be injected via an environment variable or retrieved from Azure Key Vault.
 
 ## Testing
 
@@ -308,15 +316,16 @@ dotnet test tests/DMAuth.Tests.Integration
 
 ### Environment Variables (Production)
 
+All secrets are sourced from Key Vault at startup via `DefaultAzureCredential` (Managed Identity). The only App Service Application Setting needed to bootstrap the vault is:
+
 | Variable | Description |
 |----------|-------------|
-| `ConnectionStrings__DmAuthConnection` | Azure SQL connection string |
-| `KeyVault__Enabled` | `true` |
-| `KeyVault__VaultUri` | Key Vault URI |
+| `KeyVault__VaultUri` | Production Key Vault URI (e.g. `https://dmauth-prod.vault.azure.net/`) |
 | `Jwt__Issuer` | Production issuer URL |
 | `Jwt__Audience` | Expected audience for access tokens |
-| `Jwt__RsaPrivateKeyPem` | PEM-encoded RSA private key (use Key Vault instead when possible) |
 | `Cors__AllowedOrigins__0` | Production SPA URL |
+
+Ensure the App Service's system-assigned Managed Identity has the `Key Vault Secrets User` role on the production vault, and that the vault contains all three secrets listed in the [Key Vault Secrets](#key-vault-secrets) table above.
 
 ## Security
 

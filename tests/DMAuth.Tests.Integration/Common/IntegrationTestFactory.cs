@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -42,6 +43,16 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
 
 	protected override void ConfigureWebHost(IWebHostBuilder builder)
 	{
+		// Prevent the Key Vault bootstrap in Program.cs from running during tests.
+		// An empty VaultUri means the AddAzureKeyVault call is skipped.
+		// ConfigureAppConfiguration runs after default sources so this in-memory entry
+		// overrides the value set in appsettings.Development.json.
+		builder.ConfigureAppConfiguration(config =>
+			config.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				["KeyVault:VaultUri"] = string.Empty,
+			}));
+
 		// ConfigureTestServices runs after the app's own ConfigureServices, ensuring
 		// our overrides take effect after SQL Server is registered by the app.
 		builder.ConfigureTestServices(services =>
