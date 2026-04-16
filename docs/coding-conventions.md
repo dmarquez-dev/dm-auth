@@ -535,15 +535,23 @@ Apply this rule when deciding whether a value object needs a policy: if the valu
 
 ### Project Structure
 
+The React client lives at `src/DMAuth.Client/` within the repository (parallel to `src/DMAuth.Web/`).
+
 ```
-dmauth-web/src/
-  api/              # API client modules (one per resource)
-  auth/             # Auth context, hooks, protected route
-  components/       # Shared/reusable components
-  pages/            # Page components (one per route)
-  types/            # TypeScript type definitions
-  App.tsx           # Root component with router
-  main.tsx          # Entry point
+src/DMAuth.Client/
+  src/
+    api/              # API client modules (one per resource)
+    auth/             # Auth context, hooks, protected route
+    components/       # Shared/reusable components
+    pages/            # Page components (one per route)
+    types/            # TypeScript type definitions
+    App.tsx           # Root component with router
+    main.tsx          # Entry point
+  index.html
+  vite.config.ts
+  tailwind.config.ts
+  tsconfig.json
+  package.json
 ```
 
 ### Component Conventions
