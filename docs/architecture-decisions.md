@@ -153,3 +153,85 @@ Implement the discovery endpoint entirely in the Web layer (`DiscoveryController
 **Alternatives Considered:**
 - **Application-layer handler via MediatR:** Rejected — the discovery document contains no domain logic, no validation, and requires no database access. Routing it through the MediatR pipeline adds ceremony with no benefit
 - **Expose `ScopePolicy.AllowedScopes` and use it directly in the controller:** Rejected — `ScopePolicy` is a domain enforcer, not a configuration source. Coupling the discovery document to the domain policy blurs the boundary between what the server *accepts* (a domain invariant) and what it *advertises* (a protocol concern). These sets are expected to be equal but are conceptually distinct and should be maintained independently
+
+---
+
+## ADR-007: Dual Authentication Schemes — Cookie Sessions and JWT Bearer
+
+**Status:** Accepted
+
+**Context:**
+The server has two distinct classes of API consumers: the first-party management dashboard (DMAuth.Client) and third-party resource servers calling the `/connect/userinfo` endpoint with access tokens. These consumers require fundamentally different authentication mechanisms. Forcing the dashboard through the OAuth flow would create a circular dependency where the auth server must use itself as its own authorization provider.
+
+**Decision:**
+Register two authentication schemes simultaneously:
+- **Cookie authentication** (default scheme) — the dashboard authenticates via username/password to `/api/users/login` and receives an `HttpOnly`, `SameSite=Strict`, `Secure` session cookie valid for 24 hours with sliding expiration
+- **JWT Bearer** — the `/connect/userinfo` endpoint uses `[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]` to accept RS256-signed access tokens issued by the server itself
+
+All cookie auth redirect events (`OnRedirectToLogin`, `OnRedirectToAccessDenied`) return 401/403 status codes instead of performing HTTP redirects — the API should never redirect; the SPA handles navigation.
+
+**Consequences:**
+- No circular dependency — the dashboard authenticates directly, not via the OAuth flow the server provides to third parties
+- Clear, explicit scheme selection: OAuth protocol endpoints opt in to JWT Bearer via the `[Authorize]` attribute; all other authenticated endpoints use cookies by default
+- Cookie security properties (HttpOnly, SameSite=Strict, Secure) provide CSRF protection and prevent JavaScript access to the session token
+- The `/connect/userinfo` endpoint correctly requires a Bearer token, conforming to the OIDC UserInfo spec (RFC 5749)
+- Two auth schemes means two middleware paths — developers must understand which scheme applies when adding new endpoints
+
+**Alternatives Considered:**
+- **OAuth authorization code + PKCE for the dashboard:** Rejected — the dashboard would need to initiate an OAuth flow against the same server it is managing, creating a bootstrap dependency. If the auth server is misconfigured, the dashboard cannot be used to fix it.
+- **Single JWT Bearer scheme for all endpoints:** Rejected — the dashboard would need to store and refresh access tokens in JavaScript, exposing them to XSS. HttpOnly cookies are strictly more secure for same-origin first-party UI sessions.
+
+---
+
+## ADR-008: Azure Key Vault with DefaultAzureCredential for Secrets Management
+
+**Status:** Accepted
+
+**Context:**
+The server requires several sensitive secrets at runtime: the RSA private key for signing JWTs and the database connection string (with credentials). These must never appear in source-controlled configuration files, but must be available at startup before any service registration reads `IConfiguration`.
+
+**Decision:**
+Bootstrap Azure Key Vault as an `IConfiguration` provider before any service registration:
+
+```
+builder.Configuration.AddAzureKeyVault(vaultUri, new DefaultAzureCredential());
+```
+
+`DefaultAzureCredential` tries a chain of credential sources in order — Visual Studio / `az login` in development, and Managed Identity in production — with no code change required between environments. All `appsettings.json` secret fields are set to `null` as placeholders; the Key Vault provider overlays the real values at startup.
+
+**Consequences:**
+- Secrets are never committed to source control — `appsettings.json` contains only null placeholders
+- The same binary runs in development and production without environment-specific secret handling code
+- Managed Identity in production means no credential rotation is needed for Key Vault access itself
+- Key Vault secrets can be rotated without redeployment; the new value takes effect on next app restart
+- If Key Vault is unreachable at startup, the application fails fast (the Key Vault URI check throws `InvalidOperationException` if absent)
+- Local development requires an active `az login` session with permissions to the Key Vault; new contributors must be granted access
+
+**Alternatives Considered:**
+- **`dotnet user-secrets` only:** Sufficient for local development but does not scale to team environments or production. Secrets must be distributed to each developer manually.
+- **Environment variables:** Works for CI/CD but requires secrets to be injected into the process environment, which is visible to all processes on the host. Key Vault keeps secrets out of the environment entirely.
+- **Hardcoded or appsettings-committed secrets:** Rejected — immediate security risk and incompatible with any compliance posture.
+
+---
+
+## ADR-009: Docker Compose for Local SQL Server Development
+
+**Status:** Accepted
+
+**Context:**
+The project's production and development databases are hosted on Azure. Contributors without an Azure account — or those who prefer a fully local environment — have no way to run the application without cloud access.
+
+**Decision:**
+Provide a `docker-compose.yml` at the repository root that runs SQL Server 2022 Developer edition on `localhost,1433`. The SA password is supplied via a `${SA_PASSWORD}` environment variable at `docker compose up` time and is never committed. A named volume (`dmauth-db-data`) persists data across container restarts. A health check polls the server every 10 seconds before the container is marked ready.
+
+**Consequences:**
+- Zero-configuration local database setup for any contributor with Docker installed
+- Developer choice: use the local container or the Azure Dev DB — both are valid; the connection string in user secrets determines which
+- SA password is never stored in the repository; developers set it once in their shell environment
+- Named volume survives `docker compose down` — data is only lost on explicit `docker compose down -v`
+- SQL Server 2022 Developer edition is functionally identical to Enterprise but licensed for development use only — not suitable for production
+
+**Alternatives Considered:**
+- **SQL Server LocalDB:** Windows-only and requires Visual Studio or a standalone installer. Excludes macOS and Linux contributors.
+- **SQLite for local development:** Would require a second EF Core provider and migration path. Behavioral differences between SQLite and SQL Server could mask bugs. Rejected in favor of running the actual target database engine locally.
+- **Require Azure access for all contributors:** Rejected — adds onboarding friction, requires Azure account provisioning, and creates a hard dependency on external infrastructure for local development.
