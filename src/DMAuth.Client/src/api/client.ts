@@ -11,9 +11,12 @@ export const apiClient = axios.create({
 apiClient.interceptors.response.use(
   response => response,
   error => {
-    const isAuthCheck = error.config?.url === '/api/users/me'
+    // Endpoints where 401 carries business meaning (not "session expired")
+    const isSessionlessEndpoint =
+      error.config?.url === '/api/users/me' ||
+      error.config?.url === '/api/users/me/change-password'
     const alreadyOnLogin = window.location.pathname === '/login'
-    if (error.response?.status === 401 && !isAuthCheck && !alreadyOnLogin) {
+    if (error.response?.status === 401 && !isSessionlessEndpoint && !alreadyOnLogin) {
       const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
       window.location.href = `/login?returnUrl=${returnUrl}`
     }

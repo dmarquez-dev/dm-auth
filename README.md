@@ -105,16 +105,31 @@ dm-auth/
 ├── docs/
 │   ├── work-breakdown.md              # Epic/task tracking for Jira import
 │   ├── coding-conventions.md          # C#, React, and testing standards
+│   ├── vitest-guidelines.md           # Vitest unit/component testing conventions
+│   ├── playwright-guidelines.md       # Playwright e2e testing conventions
 │   └── architecture-decisions.md      # Architecture Decision Records (ADRs)
 ├── src/
 │   ├── DMAuth.Domain/                 # Entities, value objects, domain services, interfaces
 │   ├── DMAuth.Application/            # CQRS commands/queries/handlers, validators, DTOs
 │   ├── DMAuth.Infrastructure/         # EF Core, repositories, JWT service, Key Vault
-│   └── DMAuth.Web/                    # API controllers, middleware, DI/startup
-├── tests/
-│   ├── DMAuth.Tests.Unit/             # xUnit v3 unit tests
-│   └── DMAuth.Tests.Integration/      # xUnit v3 integration tests (EF Core InMemory)
-└── dmauth-web/                        # React SPA (Vite + TypeScript + Tailwind)
+│   ├── DMAuth.Web/                    # API controllers, middleware, DI/startup
+│   └── DMAuth.Client/                 # React SPA (Vite + TypeScript + Tailwind)
+│       ├── src/                       # Application source
+│       │   ├── api/                   # Axios API clients + unit tests
+│       │   ├── auth/                  # AuthProvider, ProtectedRoute, useAuth
+│       │   ├── pages/                 # Route-level page components + component tests
+│       │   └── types/                 # Shared TypeScript types
+│       └── tests/
+│           └── e2e/                   # Playwright end-to-end tests
+│               ├── fixtures/          # Custom test fixtures (freshUser)
+│               ├── auth.setup.ts      # Global auth setup (saves storageState)
+│               ├── auth.spec.ts       # Registration, login, logout flows
+│               ├── clients.spec.ts    # Client CRUD flows
+│               ├── consent.spec.ts    # OAuth consent flows
+│               └── profile.spec.ts    # Profile update flows
+└── tests/
+    ├── DMAuth.Tests.Unit/             # xUnit v3 unit tests
+    └── DMAuth.Tests.Integration/      # xUnit v3 integration tests (EF Core InMemory + WebApplicationFactory)
 ```
 
 ### Layer Dependencies
@@ -291,19 +306,144 @@ Non-sensitive settings kept in `appsettings.json`:
 
 ## Testing
 
-### Unit Tests
+The project has three test tiers:
+
+| Tier | Stack | Location | Requires live API? |
+|------|-------|----------|--------------------|
+| .NET unit | xUnit v3 + FluentAssertions + NSubstitute | `tests/DMAuth.Tests.Unit/` | No |
+| .NET integration | xUnit v3 + EF Core InMemory + WebApplicationFactory | `tests/DMAuth.Tests.Integration/` | No |
+| Frontend unit/component | Vitest + Testing Library | `src/DMAuth.Client/src/**/*.test.{ts,tsx}` | No |
+| Frontend e2e | Playwright (Chromium) | `src/DMAuth.Client/tests/e2e/` | Yes |
+
+---
+
+### .NET Unit Tests
+
+Tests domain logic, application handlers, and services in complete isolation using NSubstitute mocks.
 
 ```bash
 dotnet test tests/DMAuth.Tests.Unit
 ```
 
-### Integration Tests
+**Validating results:** xUnit v3 prints a summary to the terminal (`X passed, 0 failed`). For a detailed breakdown by test class, add `--logger "console;verbosity=detailed"`.
 
-Integration tests use EF Core InMemory provider for isolated, parallel-safe testing.
+---
+
+### .NET Integration Tests
+
+Tests HTTP endpoints and the full request pipeline using `WebApplicationFactory` with an EF Core InMemory database and a test RSA key. No external dependencies (SQL Server, Key Vault) required.
 
 ```bash
 dotnet test tests/DMAuth.Tests.Integration
 ```
+
+**Code coverage (.NET):**
+
+```bash
+dotnet test --collect:"XPlat Code Coverage"
+# Coverage reports land in tests/*/TestResults/*/coverage.cobertura.xml
+# To generate an HTML report, install reportgenerator first:
+dotnet tool install -g dotnet-reportgenerator-globaltool
+reportgenerator -reports:"tests/**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:Html
+```
+
+Then open `coverage-report/index.html` in a browser.
+
+---
+
+### Frontend Unit & Component Tests (Vitest)
+
+Tests React components, hooks, and API client functions using jsdom and Testing Library. No browser or live API needed.
+
+#### First-time setup
+
+```bash
+cd src/DMAuth.Client
+npm install
+```
+
+#### Running tests
+
+```bash
+# Single run (CI-style)
+npm test
+
+# Watch mode (re-runs on file save)
+npm run test:watch
+
+# With coverage report
+npm run test:coverage
+```
+
+**Validating results:** Vitest prints a per-file summary. Pass/fail counts appear at the bottom:
+
+```
+Test Files  9 passed (9)
+     Tests  43 passed (43)
+```
+
+**Coverage report:** After `npm run test:coverage`, open `src/DMAuth.Client/coverage/index.html`. Aim for ≥ 80 % statement coverage on `src/api/` and `src/pages/`.
+
+See [docs/vitest-guidelines.md](docs/vitest-guidelines.md) for conventions, patterns, and anti-patterns used in this project.
+
+---
+
+### Frontend End-to-End Tests (Playwright)
+
+Drives a real Chromium browser against the full running stack (Vite dev server + .NET API). Tests register/login, client CRUD, the OAuth consent flow, and profile management.
+
+#### Prerequisites
+
+1. **Node packages** — `cd src/DMAuth.Client && npm install` (installs `@playwright/test`).
+2. **Chromium browser** — run once after installing:
+   ```bash
+   npx playwright install chromium
+   ```
+3. **Running .NET API** — start the backend before running e2e tests:
+   ```bash
+   dotnet run --project src/DMAuth.Web --launch-profile https
+   ```
+   The API must be reachable at `https://localhost:7259` (the default Vite proxy target).
+
+#### Running tests
+
+All commands run from `src/DMAuth.Client/`:
+
+```bash
+# Headless run (all tests)
+npm run e2e
+
+# Interactive UI mode — step through tests, inspect trace timeline
+npm run e2e:ui
+
+# Single spec file
+npx playwright test tests/e2e/auth.spec.ts
+
+# Keep the browser visible (headed mode)
+npx playwright test --headed
+```
+
+**Validating results:** After a run, Playwright generates an HTML report:
+
+```bash
+npx playwright show-report
+```
+
+The report opens in your browser and shows pass/fail per test, screenshots on failure, and execution traces. Traces can be opened with the Playwright Trace Viewer for a step-by-step replay of what the browser did.
+
+#### How auth is handled
+
+On the first run, the `setup` project registers a shared e2e test account (`e2e-shared@dmauth.test`) and stores the session in `tests/e2e/.auth/user.json` (gitignored). All subsequent tests in the `chromium` project start pre-authenticated using that stored session, so they never repeat the login flow. Tests in `auth.spec.ts` override this with `test.use({ storageState: { cookies: [], origins: [] } })` so they run unauthenticated. The `profile.spec.ts` tests use a `freshUser` fixture that registers a new unique user per test for full isolation.
+
+#### Overriding the base URL
+
+If the Vite dev server runs on a different port, set `PLAYWRIGHT_BASE_URL`:
+
+```bash
+PLAYWRIGHT_BASE_URL=http://localhost:3000 npm run e2e
+```
+
+See [docs/playwright-guidelines.md](docs/playwright-guidelines.md) for conventions, fixture patterns, and CI setup guidance.
 
 ## Deployment
 
