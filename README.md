@@ -45,15 +45,9 @@ Expected: `Build succeeded. 0 Error(s)`
 
 ### 3. Set Up the Development Environment
 
-All sensitive secrets (RSA signing key, database connection string, Application Insights connection string) are stored in the team's dev Azure Key Vault. No user secrets or local files are needed.
+Choose one of three options based on your setup. Options A and B use the shared Azure dev database. Option C spins up a local SQL Server container — no Azure access required.
 
-#### Prerequisites
-
-1. **Azure CLI authentication** — run `az login` and sign in with your organizational account.
-2. **Key Vault role assignment** — a team lead must assign you the `Key Vault Secrets User` role on the dev Key Vault.
-3. **Update `KeyVault:VaultUri`** — set `KeyVault:VaultUri` in `appsettings.Development.json` to the dev vault URI (e.g. `https://dmauth-dev.vault.azure.net/`).
-
-#### Option A — Setup script (recommended)
+#### Option A — Setup script (recommended for team members)
 
 The script verifies Azure CLI authentication, retrieves the DB connection string from Key Vault, applies the EF Core migration, and seeds the database.
 
@@ -88,6 +82,54 @@ sqlcmd -S <server> -d DMAuth -E -i eng/dev/seed-data.sql
 
 This inserts a test user (`test@example.com` / `testpassword123`) and a public test client (`test_client`).
 
+#### Option C — Local Docker (no Azure access required)
+
+Use this if you don't have access to the dev Azure environment or want a fully isolated local database.
+
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+**a. Start the SQL Server container**
+
+```bash
+SA_PASSWORD=YourStrong!Pass123 docker compose up -d
+```
+
+The container exposes SQL Server on `localhost,1433`. Data is persisted in the `dmauth-db-data` Docker volume across restarts.
+
+**b. Configure the connection string via user secrets**
+
+```bash
+cd src/DMAuth.Web
+dotnet user-secrets set "ConnectionStrings:DmAuthConnection" \
+  "Server=localhost,1433;Database=DMAuth;User Id=sa;Password=YourStrong!Pass123;TrustServerCertificate=True"
+```
+
+> Use the same password you passed to `SA_PASSWORD` above. The password must meet SQL Server complexity requirements: at least 8 characters, with uppercase, lowercase, digit, and special character.
+
+**c. Apply migrations**
+
+```bash
+dotnet ef database update \
+  --project src/DMAuth.Infrastructure \
+  --startup-project src/DMAuth.Web
+```
+
+**d. (Optional) Seed the database**
+
+```bash
+sqlcmd -S localhost,1433 -U sa -P YourStrong!Pass123 -d DMAuth -i eng/dev/seed-data.sql
+```
+
+**Teardown:**
+
+```bash
+# Stop but keep data
+docker compose down
+
+# Stop and wipe the database volume
+docker compose down -v
+```
+
 ### 4. Start the API
 
 ```bash
@@ -102,9 +144,14 @@ The API will be available at `https://localhost:7259`. Swagger UI is available a
 dm-auth/
 ├── DM-Auth.sln
 ├── Directory.Build.props              # Shared build settings (net10.0, nullable, implicit usings)
+├── docker-compose.yml                 # Local SQL Server for contributors
 ├── docs/
-│   ├── work-breakdown.md              # Epic/task tracking for Jira import
-│   ├── coding-conventions.md          # C#, React, and testing standards
+│   ├── dotnet-guidelines.md           # ASP.NET Core best practices (async, EF Core, HttpContext)
+│   ├── dotnet-format.md               # C# naming, formatting, and code style rules
+│   ├── backend-conventions.md         # Domain patterns: project structure, CQRS, DDD, testing
+│   ├── react-guidelines.md            # React performance and best practices
+│   ├── react-format.md                # TypeScript/React naming, exports, and style rules
+│   ├── frontend-conventions.md        # Domain patterns: state management, API client, forms
 │   ├── vitest-guidelines.md           # Vitest unit/component testing conventions
 │   ├── playwright-guidelines.md       # Playwright e2e testing conventions
 │   └── architecture-decisions.md      # Architecture Decision Records (ADRs)
