@@ -5,19 +5,19 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Domain", "src\DMAuth.Domain\DMAuth.Domain.csproj", "{36B37704-ED3F-4045-82A2-A1E02E25AE1D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Domain", "DMAuth.Domain\DMAuth.Domain.csproj", "{36B37704-ED3F-4045-82A2-A1E02E25AE1D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Application", "src\DMAuth.Application\DMAuth.Application.csproj", "{8DB8F002-1A42-4D37-A7FE-2736AC911AB2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Application", "DMAuth.Application\DMAuth.Application.csproj", "{8DB8F002-1A42-4D37-A7FE-2736AC911AB2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Infrastructure", "src\DMAuth.Infrastructure\DMAuth.Infrastructure.csproj", "{74903F2B-D0C0-48ED-9416-19D61716E881}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Infrastructure", "DMAuth.Infrastructure\DMAuth.Infrastructure.csproj", "{74903F2B-D0C0-48ED-9416-19D61716E881}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Web", "src\DMAuth.Web\DMAuth.Web.csproj", "{54F1EEA7-2147-4C94-BFAE-864B7DFC483F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Web", "DMAuth.Web\DMAuth.Web.csproj", "{54F1EEA7-2147-4C94-BFAE-864B7DFC483F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F1A2B3C4-D5E6-7890-ABCD-EF1234567890}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Tests.Unit", "tests\DMAuth.Tests.Unit\DMAuth.Tests.Unit.csproj", "{1E8C70DA-06B2-4B81-B7FD-969CC5D1D43B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Tests.Unit", "..\tests\DMAuth.Tests.Unit\DMAuth.Tests.Unit.csproj", "{1E8C70DA-06B2-4B81-B7FD-969CC5D1D43B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Tests.Integration", "tests\DMAuth.Tests.Integration\DMAuth.Tests.Integration.csproj", "{A41D6187-BAC8-480B-90E1-AC65D4FF9DE8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMAuth.Tests.Integration", "..\tests\DMAuth.Tests.Integration\DMAuth.Tests.Integration.csproj", "{A41D6187-BAC8-480B-90E1-AC65D4FF9DE8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
