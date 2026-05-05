@@ -222,7 +222,7 @@ builder.Configuration.AddAzureKeyVault(vaultUri, new DefaultAzureCredential());
 The project's production and development databases are hosted on Azure. Contributors without an Azure account — or those who prefer a fully local environment — have no way to run the application without cloud access.
 
 **Decision:**
-Provide a `docker-compose.yml` at the repository root that runs SQL Server 2022 Developer edition on `localhost,1433`. The SA password is supplied via a `${SA_PASSWORD}` environment variable at `docker compose up` time and is never committed. A named volume (`dmauth-db-data`) persists data across container restarts. A health check polls the server every 10 seconds before the container is marked ready.
+Provide a `docker-compose.yml` at `eng/dev/` that runs SQL Server 2022 Developer edition on `localhost,1433`. The SA password is supplied via a `${SA_PASSWORD}` environment variable at `docker compose up` time and is never committed. A named volume (`dmauth-db-data`) persists data across container restarts. A health check polls the server every 10 seconds before the container is marked ready.
 
 **Consequences:**
 - Zero-configuration local database setup for any contributor with Docker installed

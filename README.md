@@ -38,7 +38,7 @@ cd dm-auth
 ### 2. Build the Solution
 
 ```bash
-dotnet build
+dotnet build src/DM-Auth.sln
 ```
 
 Expected: `Build succeeded. 0 Error(s)`
@@ -91,7 +91,7 @@ Use this if you don't have access to the dev Azure environment or want a fully i
 **a. Start the SQL Server container**
 
 ```bash
-SA_PASSWORD=YourStrong!Pass123 docker compose up -d
+SA_PASSWORD=YourStrong!Pass123 docker compose -f eng/dev/docker-compose.yml up -d
 ```
 
 The container exposes SQL Server on `localhost,1433`. Data is persisted in the `dmauth-db-data` Docker volume across restarts.
@@ -124,10 +124,10 @@ sqlcmd -S localhost,1433 -U sa -P YourStrong!Pass123 -d DMAuth -i eng/dev/seed-d
 
 ```bash
 # Stop but keep data
-docker compose down
+docker compose -f eng/dev/docker-compose.yml down
 
 # Stop and wipe the database volume
-docker compose down -v
+docker compose -f eng/dev/docker-compose.yml down -v
 ```
 
 ### 4. Start the API
@@ -142,9 +142,8 @@ The API will be available at `https://localhost:7259`. Swagger UI is available a
 
 ```
 dm-auth/
-├── DM-Auth.sln
+├── .editorconfig                      # C# and TypeScript code style rules
 ├── Directory.Build.props              # Shared build settings (net10.0, nullable, implicit usings)
-├── docker-compose.yml                 # Local SQL Server for contributors
 ├── docs/
 │   ├── dotnet-guidelines.md           # ASP.NET Core best practices (async, EF Core, HttpContext)
 │   ├── dotnet-format.md               # C# naming, formatting, and code style rules
@@ -155,7 +154,12 @@ dm-auth/
 │   ├── vitest-guidelines.md           # Vitest unit/component testing conventions
 │   ├── playwright-guidelines.md       # Playwright e2e testing conventions
 │   └── architecture-decisions.md      # Architecture Decision Records (ADRs)
+├── eng/
+│   └── dev/
+│       ├── docker-compose.yml         # Local SQL Server for contributors
+│       └── setup.ps1                  # Dev environment setup script
 ├── src/
+│   ├── DM-Auth.sln
 │   ├── DMAuth.Domain/                 # Entities, value objects, domain services, interfaces
 │   ├── DMAuth.Application/            # CQRS commands/queries/handlers, validators, DTOs
 │   ├── DMAuth.Infrastructure/         # EF Core, repositories, JWT service, Key Vault

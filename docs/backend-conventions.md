@@ -22,6 +22,19 @@
 
 ## 1. Project Structure
 
+### Solution File
+
+`DM-Auth.sln` lives in `src/` alongside the source projects. Build and restore commands are run from the repository root using the explicit solution path:
+
+```bash
+dotnet build src/DM-Auth.sln
+dotnet test src/DM-Auth.sln
+```
+
+`Directory.Build.props` remains at the repository root so MSBuild picks it up for all projects regardless of where commands are invoked from.
+
+### Layer Organization
+
 Each layer uses a different organizing principle suited to its responsibilities:
 
 - **Domain** — organized by technical category (entities, value objects, policies, events, exceptions, interfaces). Domain concepts are cross-cutting and not feature-owned.
