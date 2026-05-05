@@ -34,7 +34,12 @@ public static class DependencyInjection
 		IConfiguration configuration)
 	{
 		services.AddDbContext<DmAuthDbContext>(options =>
-			options.UseSqlServer(configuration.GetConnectionString("DmAuth")));
+			options.UseSqlServer(
+				configuration.GetConnectionString("DmAuth"),
+				sqlOptions => sqlOptions.EnableRetryOnFailure(
+					maxRetryCount: 5,
+					maxRetryDelay: TimeSpan.FromSeconds(30),
+					errorNumbersToAdd: [40613])));
 
 		services.AddScoped<IUnitOfWork>(provider =>
 			provider.GetRequiredService<DmAuthDbContext>());
