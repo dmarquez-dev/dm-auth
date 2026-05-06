@@ -4,6 +4,7 @@ using DMAuth.Domain.Entities.Client;
 using DMAuth.Domain.Entities.Consent;
 using DMAuth.Domain.Entities.RefreshToken;
 using DMAuth.Domain.Entities.User;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DMAuth.Infrastructure.Persistence;
@@ -16,8 +17,14 @@ namespace DMAuth.Infrastructure.Persistence;
 /// </param>
 public class DmAuthDbContext(
 	DbContextOptions<DmAuthDbContext> options)
-		: DbContext(options), IUnitOfWork
+		: DbContext(options), IUnitOfWork, IDataProtectionKeyContext
 {
+	/// <summary>
+	///		Data Protection keys for session cookie encryption persistence.
+	/// </summary>
+	public DbSet<DataProtectionKey> DataProtectionKeys =>
+		Set<DataProtectionKey>();
+
 	/// <summary>
 	///	User accounts.
 	/// </summary>

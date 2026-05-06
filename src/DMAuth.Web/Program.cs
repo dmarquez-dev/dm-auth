@@ -167,7 +167,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseHttpsRedirection();
 app.UseCors("AllowSpa");
 app.UseAuthentication();
 app.UseAuthorization();
