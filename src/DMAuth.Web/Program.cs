@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.ApplicationInsights;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +31,16 @@ builder.Configuration.AddAzureKeyVault(
 
 // Configure Serilog
 builder.Host.UseSerilog((context, loggerConfig) =>
-	loggerConfig.ReadFrom.Configuration(context.Configuration));
+{
+	loggerConfig.ReadFrom.Configuration(context.Configuration);
+
+	var aiConnectionString = context.Configuration.GetConnectionString("ApplicationInsights");
+	if (!string.IsNullOrEmpty(aiConnectionString))
+		loggerConfig.WriteTo.ApplicationInsights(
+			aiConnectionString,
+			TelemetryConverter.Traces,
+			restrictedToMinimumLevel: LogEventLevel.Warning);
+});
 
 // Add layer services
 builder.Services.AddApplication();
