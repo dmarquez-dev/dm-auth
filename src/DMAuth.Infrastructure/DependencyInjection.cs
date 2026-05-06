@@ -5,6 +5,7 @@ using DMAuth.Infrastructure.Persistence;
 using DMAuth.Infrastructure.Persistence.Repositories;
 using DMAuth.Infrastructure.Security;
 using DMAuth.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,6 +50,9 @@ public static class DependencyInjection
 		services.AddScoped<IConsentRepository, ConsentRepository>();
 		services.AddScoped<IAuthorizationCodeRepository, AuthorizationCodeRepository>();
 		services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+		services.AddDataProtection()
+			.PersistKeysToDbContext<DmAuthDbContext>();
 
 		services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
 		services.AddScoped<ITokenService, TokenService>();
