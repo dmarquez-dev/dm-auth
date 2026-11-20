@@ -23,12 +23,13 @@ Binds all React and SPA code in `src/DMAuth.Client/`.
 
 | State type | Owner |
 |---|---|
-| Server state (API data) | TanStack Query |
+| Server state (API data) | TanStack Query, except the auth session calls below |
 | Auth state | Shared context, exposed through the auth provider and `useAuth` |
 | Form state | react-hook-form with a zod schema |
 | Local UI state | Component-local state |
 
-- Route every API call through TanStack Query; never call `fetch` or the HTTP client ad hoc from an effect or a component body.
+- Read resource data with `useQuery` and change it with `useMutation`; never call `fetch` or the HTTP client ad hoc from an effect or a component body.
+- Exception, auth session calls: await `authApi.login`, `authApi.register` and `authApi.logout` directly in the event handler that triggers them (a form `onSubmit`, the auth provider's `logout`), then invalidate or clear the affected queries (`invalidateQueries({ queryKey: ['auth', 'me'] })`, `queryClient.clear()`) and navigate. Make no other API call outside a query or mutation.
 - Shape query keys as `['resource', id]` (e.g. `['clients', clientId]`).
 - Invalidate the related queries in a mutation's `onSuccess`.
 - Read auth state through `useAuth`; never import the auth context directly.
@@ -46,7 +47,7 @@ Binds all React and SPA code in `src/DMAuth.Client/`.
 ## TanStack Query integration
 
 - Read with `useQuery({ queryKey, queryFn })`, where `queryFn` calls the resource module and unwraps `response.data`.
-- Write with `useMutation({ mutationFn, onSuccess })`, invalidating through `useQueryClient().invalidateQueries({ queryKey })` in `onSuccess`.
+- Write resource data with `useMutation({ mutationFn, onSuccess })` (auth session calls excepted, see State management), invalidating through `useQueryClient().invalidateQueries({ queryKey })` in `onSuccess`.
 - Let components that need the same data share one query key, so TanStack Query deduplicates and caches the request; never fetch in `useEffect` into `useState`.
 - For data that never changes during a session, set `staleTime: Infinity` rather than refetching.
 - Do not add SWR or any second data-fetching library.
