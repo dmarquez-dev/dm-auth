@@ -143,16 +143,12 @@ The API will be available at `https://localhost:7259`. Swagger UI is available a
 ```
 dm-auth/
 ├── .editorconfig                      # C# and TypeScript code style rules
+├── .sir/
+│   ├── config.json                    # SIR project config (domain-to-discipline wiring)
+│   └── disciplines/                   # Project code conventions (C#, .NET, EF Core, TypeScript, React, tests)
+├── CLAUDE.md                          # Branching and pull request policy for SIR sessions
 ├── Directory.Build.props              # Shared build settings (net10.0, nullable, implicit usings)
 ├── docs/
-│   ├── dotnet-guidelines.md           # ASP.NET Core best practices (async, EF Core, HttpContext)
-│   ├── dotnet-format.md               # C# naming, formatting, and code style rules
-│   ├── backend-conventions.md         # Domain patterns: project structure, CQRS, DDD, testing
-│   ├── react-guidelines.md            # React performance and best practices
-│   ├── react-format.md                # TypeScript/React naming, exports, and style rules
-│   ├── frontend-conventions.md        # Domain patterns: state management, API client, forms
-│   ├── vitest-guidelines.md           # Vitest unit/component testing conventions
-│   ├── playwright-guidelines.md       # Playwright e2e testing conventions
 │   └── architecture-decisions.md      # Architecture Decision Records (ADRs)
 ├── eng/
 │   └── dev/
@@ -435,7 +431,7 @@ Test Files  9 passed (9)
 
 **Coverage report:** After `npm run test:coverage`, open `src/DMAuth.Client/coverage/index.html`. Aim for ≥ 80 % statement coverage on `src/api/` and `src/pages/`.
 
-See [docs/vitest-guidelines.md](docs/vitest-guidelines.md) for conventions, patterns, and anti-patterns used in this project.
+See [.sir/disciplines/client-tests.md](.sir/disciplines/client-tests.md) for the Vitest conventions, patterns, and anti-patterns used in this project.
 
 ---
 
@@ -494,7 +490,7 @@ If the Vite dev server runs on a different port, set `PLAYWRIGHT_BASE_URL`:
 PLAYWRIGHT_BASE_URL=http://localhost:3000 npm run e2e
 ```
 
-See [docs/playwright-guidelines.md](docs/playwright-guidelines.md) for conventions, fixture patterns, and CI setup guidance.
+See [.sir/disciplines/client-tests.md](.sir/disciplines/client-tests.md) for the Playwright conventions and fixture patterns used in this project.
 
 ## Deployment
 

@@ -418,3 +418,5 @@ dmauth-web/dist/
 # Application Insights local config
 ApplicationInsights.config
 /.claude
+# SIR session worktrees
+.claude-worktrees/

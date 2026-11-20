@@ -1,0 +1,39 @@
+{
+  "$comment": "SIR configuration for DM Auth. Every key other than disciplines keeps sir-sdlc's default value; disciplines wires this project's conventions, kept as fragments under .sir/disciplines/, onto each domain. Tune against observed cost.",
+  "modelTiers": {
+    "sir-architect": "strong",
+    "sir-backend-engineer": "strong",
+    "sir-frontend-engineer": "strong",
+    "sir-database-engineer": "strong",
+    "sir-test-engineer": "strong",
+    "sir-reviewer": "strong",
+    "sir-git": "cheap",
+    "sir-curator": "strong"
+  },
+  "tierToModel": {
+    "strong": "opus",
+    "cheap": "haiku"
+  },
+  "gates": {
+    "maxRevisionRounds": 2,
+    "maxSearchesPerUnknown": 1,
+    "pushQuestion": true
+  },
+  "disciplines": {
+    "$comment": "Per domain, the project fragments composed onto sir-sdlc's bundled base, in order. Fragments are read from .sir/disciplines/<name>.md.",
+    "backend": ["csharp-style", "dotnet", "efcore"],
+    "frontend": ["typescript-style", "react"],
+    "database": ["csharp-style", "efcore"],
+    "test": ["csharp-style", "typescript-style", "dotnet-tests", "client-tests"]
+  },
+  "git": {
+    "branchPrefix": "sir/",
+    "worktreeRoot": ".claude-worktrees/"
+  },
+  "upkeep": {
+    "retiredRetentionSessions": 10,
+    "inlineRecheckMax": 5,
+    "lessonsActiveNudge": 100,
+    "backlogGrowthNudge": 20
+  }
+}
