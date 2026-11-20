@@ -6,7 +6,7 @@ Every new unit, component, and e2e test file in `src/DMAuth.Client` follows thes
 
 - Unit and component tests use `vitest`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, and `jsdom`; coverage uses `@vitest/coverage-v8`. Do not add another runner, DOM environment, or matcher library.
 - `vitest.config.ts` extends `vite.config.ts` through `mergeConfig`; never duplicate Vite configuration in it.
-- Keep these `test` settings: `environment: 'jsdom'`, `globals: false`, `setupFiles: ['./src/test/setup.ts']`, `include: ['src/**/*.{test,spec}.{ts,tsx}']`, coverage `provider: 'v8'` with reporters `text`, `html`, `lcov`, excluding `src/main.tsx`, `src/test/**`, and `src/types/**`.
+- Keep these `test` settings: `environment: 'jsdom'`, `globals: false`, `setupFiles: ['./src/test/setup.ts']`, `include: ['src/**/*.{test,spec}.{ts,tsx}']`, and the `coverage` block `provider: 'v8'`, `reporter: ['text', 'html', 'lcov']`, `include: ['src/**/*.{ts,tsx}']`, `exclude: ['src/main.tsx', 'src/test/**', 'src/types/**']`.
 - `src/test/setup.ts` imports `@testing-library/jest-dom/vitest`.
 - `globals` is `false`: import `describe`, `it`, `expect`, `vi`, and hooks from `vitest` in every test file.
 - The scripts are `test` (`vitest run`), `test:watch` (`vitest`), and `test:coverage` (`vitest run --coverage`).
@@ -14,7 +14,6 @@ Every new unit, component, and e2e test file in `src/DMAuth.Client` follows thes
 ## Vitest: files
 
 - Place a test file beside the source file it tests: `LoginPage.tsx` → `LoginPage.test.tsx`.
-- Name test files `<Subject>.test.tsx` for components and `<subject>.test.ts` for non-JSX modules.
 - Shared test utilities (render helper, test data factories) live in `src/test/`. Production code never imports from `src/test/`.
 
 ## Vitest: structure
@@ -73,7 +72,7 @@ Every new unit, component, and e2e test file in `src/DMAuth.Client` follows thes
 ## Playwright: stack and configuration
 
 - E2e tests use `@playwright/test` against Chromium only. Install the browser with `npx playwright install chromium --with-deps`.
-- Keep these `playwright.config.ts` settings: `testDir: './tests/e2e'`, `fullyParallel: true`, `forbidOnly: !!process.env.CI`, `retries: process.env.CI ? 2 : 0`, `reporter: [['html', { open: 'never' }]]`, `use.baseURL` from `PLAYWRIGHT_BASE_URL` falling back to `http://localhost:5173`, `trace: 'on-first-retry'`, and a `webServer` running `npm run dev` with `reuseExistingServer: !process.env.CI`.
+- Keep these `playwright.config.ts` settings: `testDir: './tests/e2e'`, `fullyParallel: true`, `forbidOnly: !!process.env.CI`, `retries: process.env.CI ? 2 : 0`, `workers: process.env.CI ? 1 : undefined`, `reporter: [['html', { open: 'never' }]]`, `use.baseURL` from `PLAYWRIGHT_BASE_URL` falling back to `http://localhost:5173`, `trace: 'on-first-retry'`, and a `webServer` running `npm run dev` with `reuseExistingServer: !process.env.CI`.
 - The `chromium` project depends on the `setup` project (`*.setup.ts`) and reads `storageState` from `tests/e2e/.auth/user.json`.
 - Run e2e through the `e2e` (`playwright test`) and `e2e:ui` (`playwright test --ui`) scripts.
 
@@ -89,7 +88,7 @@ Every new unit, component, and e2e test file in `src/DMAuth.Client` follows thes
 - Each test is fully independent. Never share state between tests through module-level variables or test order.
 - Authenticate the shared user once in `auth.setup.ts` and save it with `storageState`; never log in at the start of every test.
 - A test that mutates the signed-in user's own account data (display name, password) takes the `freshUser` fixture, imported with `test` and `expect` from `tests/e2e/fixtures/auth.ts`; the fixture registers a unique user, signs in, and leaves `page` on `/dashboard`.
-- A new user's email and username carry a per-run unique suffix so tests never collide on database rows.
+- A new user's email and username carry a unique suffix drawn per test (`randomBytes(4)` on every `freshUser` fixture call) so tests never collide on database rows.
 - After sign-in, navigate by clicking sidebar nav links (client-side routing), not `page.goto`; a full-page navigation discards the query cache.
 
 ## Playwright: locators
@@ -122,7 +121,7 @@ Every new unit, component, and e2e test file in `src/DMAuth.Client` follows thes
 
 - Diagnose failures with the trace viewer (`npx playwright show-report`) and UI mode (`npm run e2e:ui`); do not add `console.log` statements to a spec to diagnose it.
 - Do not enable screenshots or video by default.
-- In CI, install only Chromium, run tests in parallel, and upload `playwright-report/` as an artifact when the run fails.
+- In CI, install only Chromium, run tests serially on the single worker `workers` sets in CI (`fullyParallel: true` parallelizes only local runs), and upload `playwright-report/` as an artifact when the run fails.
 
 ## Playwright: what to test
 
