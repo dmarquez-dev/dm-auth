@@ -6,7 +6,7 @@ Binds every C# file, production and test alike.
 
 | Element | Convention | Example |
 |---|---|---|
-| Namespace | PascalCase, matches the folder structure | `DMAuth.Application.Features.Users.Commands.RegisterUser` |
+| Namespace | PascalCase, matches the folder structure | `DMAuth.Application.Features.Users.Register` |
 | Class / record | PascalCase | `RegisterUserCommand` |
 | Interface | `I` prefix + PascalCase | `IUserRepository` |
 | Method | PascalCase | `FindByEmail()` |
@@ -77,10 +77,9 @@ var results = dbContext.Users
 	.Where(user =>
 		user.IsActive)
 	.Select(user =>
-		new UserDto
-		{
-			Id = user.Id
-		})
+		new UserSummary(
+			user.Id,
+			user.Username))
 	.ToListAsync(cancellationToken);
 
 public bool IsExpired =>

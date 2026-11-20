@@ -15,7 +15,7 @@
   - Application by feature: `Common/Interfaces/` (application service interfaces), `Common/Behaviors/` (pipeline behaviors), `Common/Results/` (result and error types), `Features/{Feature}/`, and a `DependencyInjection` class.
   - Infrastructure by concern, one external system or resource per folder: `Persistence/` (`Configurations/`, `Repositories/`, `Migrations/`), `Security/`, `Logging/`, `Email/`, and a `DependencyInjection` class.
   - Web by feature, mirroring Application: `Common/`, `{Feature}/{Feature}Controller` with `{Feature}/Requests/` for web-layer input models, `Middleware/`, `Program`.
-- Inside `Features/{Feature}/`, a command lives in `Commands/{Name}/` as `{Name}Command`, `{Name}CommandHandler`, `{Name}CommandValidator`; a query lives in `Queries/{Name}/` as `{Name}Query`, `{Name}QueryHandler`, `{Name}Dto`; shared DTOs go in `DTOs/`.
+- Inside `Features/{Feature}/`, give each command or query its own folder named for the operation, `Features/{Feature}/{Name}/` (`Clients/GetById/`, `Users/Register/`), holding `{Operation}Command` or `{Operation}Query`, `{Operation}Handler`, `{Operation}Validator`, and `{Operation}Response` when the operation returns its own payload (`GetClientByIdQuery`, `GetClientByIdHandler`, `GetClientByIdValidator`, `GetClientByIdResponse`); never add `Commands/`, `Queries/` or `DTOs/` folders, and never name a type `…CommandHandler`, `…QueryHandler`, `…CommandValidator` or `…Dto`.
 - Web-layer input models carry only HTTP-supplied fields (form fields, multipart data) and are mapped to Application commands; the controller supplies application-level values (current user identity, server-assigned IDs).
 - Application response types are returned directly as HTTP response bodies; do not declare parallel Web-layer response models.
 
@@ -23,21 +23,21 @@
 
 - CQRS organizes code only; there is one database for reads and writes.
 - Dispatch every command and query through the pipeline, which runs validation before the handler.
-- Name a command in the imperative (`RegisterUser`, `DeleteClient`, `ChangePassword`).
+- Name a command in the imperative (`RegisterUser`, `DeleteClient`, `ChangeUserPassword`).
 - A command carries only caller-supplied data; never put server-assigned values (IDs, timestamps) on it.
-- A command returns a typed result wrapper and has a validator.
-- Name a query as a noun phrase (`GetUserProfile`, `ListClients`).
-- A query returns its DTO directly, without a result wrapper; a missing record is surfaced via HTTP, not as a domain failure.
-- A query has no validator; its input is validated at the HTTP layer by model binding.
+- A command returns the result wrapper (`Result`, or `TypedResult<T>` when it returns a value, usually `{Operation}Response`) and has a validator.
+- Name a query `Get` + what it reads (`GetUserProfile`, `GetClientById`, `GetClientsByOwner`).
+- A query returns the result wrapper too, `TypedResult<{Operation}Response>` (`TypedResult<List<{Operation}Response>>` for a collection); a missing record is a `NotFound` failure result, never an exception or a bare `null`.
+- A query has a validator, exactly like a command; the pipeline runs it before the handler.
 - Declare commands and queries as records with positional properties implementing `IRequest<TResponse>`.
-- Declare handlers as `sealed` classes with a primary constructor. A command handler returns the result wrapper; a query handler returns the DTO.
-- Declare validators as `sealed` classes extending `AbstractValidator<TCommand>`; write each rule as a method chain whose lambda parameter is named after the command (`command =>`).
+- Declare handlers as `sealed` classes with a primary constructor; every handler returns the result wrapper its request declares.
+- Declare validators as `sealed` classes extending `AbstractValidator<TRequest>` for the command or query; write each rule as a method chain whose lambda parameter is named for the request kind: `command =>` in a command validator, `query =>` in a query validator.
 
 ```csharp
-public sealed class RegisterUserCommandValidator
+public sealed class RegisterUserValidator
 	: AbstractValidator<RegisterUserCommand>
 {
-	public RegisterUserCommandValidator()
+	public RegisterUserValidator()
 	{
 		RuleFor(command =>
 			command.Email)
