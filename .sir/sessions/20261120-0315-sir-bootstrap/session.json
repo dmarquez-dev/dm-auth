@@ -1,0 +1,50 @@
+{
+  "id": "20261120-0315-sir-bootstrap",
+  "name": "sir-bootstrap",
+  "scope": "standard",
+  "status": "AWAITING_APPROVAL",
+  "brief": "Bootstrap SIR for DM Auth. Add .sir/config.json (the plugin template with disciplines wired), seven self-contained discipline fragments under .sir/disciplines/ (csharp-style, dotnet, efcore, dotnet-tests, client-tests, typescript-style, react) and a .gitignore entry for .claude-worktrees/. Port every rule of the eight docs/ convention files into those fragments, proven by a per-task port ledger kept with the session records, fold in five memory-only conventions, then delete the eight docs and repoint README. docs/architecture-decisions.md stays. No code, test or workflow change: the session touches exactly 18 paths.",
+  "started": "2026-11-20T03:15:36Z",
+  "ended": null,
+  "parent": null,
+  "children": [],
+  "runs": [
+    {
+      "cc": "3e691ea5-fe83-4a4e-8a01-e64e807214a7",
+      "phase": "discuss",
+      "sir": "1.0.49",
+      "started": "2026-11-20T03:15:36Z",
+      "ended": "2026-11-20T03:23:03Z",
+      "outcome": "complete"
+    },
+    {
+      "cc": "c26cfebd-3363-4c23-8158-11e79771fdd4",
+      "phase": "spec",
+      "sir": "1.0.49",
+      "started": "2026-11-20T03:24:38Z",
+      "ended": "2026-11-20T04:02:54Z",
+      "outcome": "complete"
+    },
+    {
+      "cc": "5f1acc60-db67-4668-88b5-13ee37e37f21",
+      "phase": "implement",
+      "sir": "1.0.49",
+      "started": "2026-11-20T04:11:43Z",
+      "ended": "2026-11-20T05:05:58Z",
+      "outcome": "complete"
+    },
+    {
+      "cc": "987cde1a-7311-435f-8cc6-6713d300d20f",
+      "phase": "review",
+      "sir": "1.0.49",
+      "started": "2026-11-20T16:27:23Z",
+      "ended": null
+    }
+  ],
+  "pushed": true,
+  "metrics": {
+    "userInteractions": 1,
+    "escalationsRaised": 1,
+    "reviewRounds": 0
+  }
+}

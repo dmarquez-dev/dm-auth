@@ -1,0 +1,173 @@
+{
+  "session": "20261120-0315-sir-bootstrap",
+  "updatedAt": "2026-11-20T17:49:02Z",
+  "worktree": "/c/Users/dmarq/Development/Repos/dm-auth/.claude-worktrees/20261120-0315-sir-bootstrap",
+  "branch": "sir/20261120-0315-sir-bootstrap",
+  "verification": [
+    {
+      "command": "dotnet build src/DM-Auth.sln --no-restore",
+      "runnable": false,
+      "probe": "re-probed at dcc3054: error NETSDK1004: Assets file not found (6 Error(s), exit=1)"
+    },
+    {
+      "command": "dotnet test src/DM-Auth.sln --no-build --no-restore",
+      "runnable": false,
+      "probe": "re-probed at dcc3054: no output, exit=0 (nothing built to test)"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client test",
+      "runnable": false,
+      "probe": "re-probed at dcc3054: 'vitest' is not recognized as an internal or external command (exit=1); no node_modules in the worktree"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client run lint",
+      "runnable": false,
+      "probe": "re-probed at dcc3054: 'eslint' is not recognized as an internal or external command (exit=1)"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client run build",
+      "runnable": false,
+      "probe": "re-probed at dcc3054: 'tsc' is not recognized as an internal or external command (exit=1)"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "status": "done",
+      "revisionRounds": 1,
+      "startRef": "2e0f9e24f391c4f0340db9bc86c4f500e993916e",
+      "model": "opus",
+      "redispatches": 0,
+      "commit": "e0a111c"
+    },
+    {
+      "id": "T2",
+      "status": "done",
+      "revisionRounds": 2,
+      "startRef": "2e0f9e24f391c4f0340db9bc86c4f500e993916e",
+      "model": "opus",
+      "redispatches": 0,
+      "commit": "5523a34"
+    },
+    {
+      "id": "T3",
+      "status": "done",
+      "revisionRounds": 1,
+      "startRef": "2e0f9e24f391c4f0340db9bc86c4f500e993916e",
+      "model": "opus",
+      "redispatches": 0,
+      "commit": "0d926bf"
+    },
+    {
+      "id": "T4",
+      "status": "done",
+      "revisionRounds": 0,
+      "startRef": "b78adf0d56a46ea481a5234e582ed9c0c1cb4d42",
+      "model": "opus",
+      "redispatches": 0,
+      "commit": "dcc3054"
+    }
+  ],
+  "escalations": [
+    {
+      "id": "E1",
+      "question": "Gate 1: should the .sir/disciplines fragments point at the existing docs/ convention files or carry the rules themselves, and what happens to those docs afterwards?",
+      "reason": "ambiguous",
+      "resolved": true,
+      "answer": "Fragments are self-contained, carrying each domain's rules inline; the docs/ convention files are deleted once their rules are ported, so each rule has one home (user's answer outside the menu, per discussion.md)."
+    },
+    {
+      "id": "E2",
+      "taskId": "T2",
+      "question": "T2 criteria 8-10: where a source doc rule is contradicted by the repository (e2e isolation: docs say every test takes freshUser, repo uses shared storageState except account-mutating tests; plus the doc CI reporter and e2e:debug script the repo lacks), does carried require stating the doc rule, or may the fragment state the repository practice?",
+      "reason": "ambiguous",
+      "resolved": true,
+      "options": [
+        {
+          "summary": "Keep the repo-practice rules and amend fragments.md: where the repository contradicts a doc, the repository practice is carried and the ledger row says so",
+          "rationale": "A fragment telling every e2e test to use freshUser contradicts the repo fixture comment and 3 of 4 spec files; T1 and T3 made the same kind of substitution (Result/PolicyResult types, Tailwind v4 @theme) and their reviewers accepted them as stated",
+          "evidence": {
+            "kind": "repo",
+            "sources": [
+              "tests/e2e/fixtures/auth.ts",
+              "playwright.config.ts",
+              "tests/e2e/profile.spec.ts"
+            ]
+          }
+        },
+        {
+          "summary": "State the doc rules literally (every e2e test takes freshUser; restate the github reporter and e2e:debug) and log the repo divergence to the backlog",
+          "rationale": "The docs are the written conventions and D5 asks for a lossless port",
+          "evidence": {
+            "kind": "repo",
+            "sources": [
+              "docs/frontend-conventions.md",
+              "docs/react-format.md",
+              "docs/playwright-guidelines.md"
+            ]
+          }
+        },
+        {
+          "summary": "Decide rule by rule: carry repo practice for the reporter and e2e:debug, state the doc isolation rule literally",
+          "rationale": "Reporter and e2e:debug are low-stakes; isolation is a real policy choice",
+          "evidence": {
+            "kind": "judgment"
+          }
+        }
+      ],
+      "answer": "Repo wins: keep the repository-practice rules; amend contracts/fragments.md so that where the repository contradicts a doc, the repository practice is carried and the ledger row says so (recommended option, chosen from the menu). Applied as A1; T2 re-reviewed against the amended text."
+    },
+    {
+      "id": "E3",
+      "question": "Gate 3: the CLAUDE.md this session adds (D11) says never commit or push directly on main and to land through a pull request, while SIR's review phase merges the session branch into main locally and commits the session records there. How does this session land?",
+      "reason": "external-contract",
+      "resolved": true,
+      "answer": "Land through a pull request (recommended option, chosen from the menu): no local merge into main; the session records are committed on sir/20261120-0315-sir-bootstrap, the branch is pushed, a PR into main is opened, and the session holds until the user merges it.",
+      "options": [
+        {
+          "summary": "Land through a pull request: no local merge; commit the session records on the session branch, push it, open a PR into main, and hold until you merge it",
+          "rationale": "D11 was signed at Gate 2 and CLAUDE.md:5-13 calls the policy binding for every SIR session here; the repository already lands work through PRs",
+          "evidence": {
+            "kind": "repo",
+            "sources": [
+              "CLAUDE.md",
+              ".sir/sessions/20261120-0315-sir-bootstrap/spec.md"
+            ]
+          }
+        },
+        {
+          "summary": "SIR's local merge into main, then push main only if you approve it at the push question",
+          "rationale": "The framework's default path; commits the merge and the session records directly on main, which CLAUDE.md rule 2 forbids",
+          "evidence": {
+            "kind": "repo",
+            "sources": [
+              "CLAUDE.md"
+            ]
+          }
+        },
+        {
+          "summary": "SIR's local merge into main, never pushed; you publish main yourself",
+          "rationale": "Keeps the framework's records intact locally and leaves publication entirely to you",
+          "evidence": {
+            "kind": "judgment"
+          }
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "userInteractions": 4,
+    "escalationsRaised": 3,
+    "reviewRounds": 4
+  },
+  "amendments": [
+    {
+      "id": "A1",
+      "escalation": "E2",
+      "artifact": "contracts/fragments.md",
+      "before": "§5 precedence covers only doc-vs-M1–M5 conflicts",
+      "after": "§5 adds: where a doc rule contradicts repository practice, the repository practice is carried (counts as carried) and the ledger row names the evidence; M1–M5 still win",
+      "inFlight": []
+    }
+  ]
+}
