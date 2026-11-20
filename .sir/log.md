@@ -1,0 +1,1 @@
+2026-11-20  20261120-0315-sir-bootstrap  sir-bootstrap  standard  userInteractions=4 escalationsRaised=3 reviewRounds=4  sir=1.0.49  backlog: closed none (created with 2 rows); landed via PR #23 per E3

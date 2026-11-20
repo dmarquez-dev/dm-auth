@@ -58,3 +58,7 @@
 2026-11-20T17:48Z  GATE      3  approved  dispositions: E3=land via PR (no local merge); fix now T1 A1, T2 A2 A4 A5 A7, T3 A2 (committed e0a111c, 5523a34, 0d926bf); memory notes fixed outside repo; drop T2 A3 A1 A8, T3 A3 A1 B-A1; carry T1 Adv-1, T3 B-A2 to .sir/backlog.md (new file, 2 rows); T1 A2 withdrawn after re-measure
 2026-11-20T17:48Z  GATE      push  approved  push sir/20261120-0315-sir-bootstrap and open a PR into main; 8 commits will go, 8 from this session; main not pushed
 2026-11-20T17:49Z  DISPATCH  commit-artifacts  sir-git  on the session branch in the worktree per E3; branch check follows cleanup, after this commit; trailer="Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" (sole line supplied by harness)  haiku
+2026-11-20T17:54Z  DISPATCH  cleanup  sir-git  remove worktree, keep branch (after commit-artifacts fbf3523 and push, per E3)  haiku
+2026-11-20T18:05Z  COMMIT    merge  a776f78  PR #23 merged into main on GitHub (per E3); branch check after cleanup: git branch --list printed "  sir/20261120-0315-sir-bootstrap"
+2026-11-20T18:27Z  PHASE     wrap entered  cc=987cde1a
+2026-11-20T18:29Z  DISPATCH  commit-wrap  sir-git  on branch sir/20261120-0315-sir-bootstrap-wrap from main a776f78, then push and PR per CLAUDE.md and E3  trailer="Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" (sole line supplied by harness)  haiku
