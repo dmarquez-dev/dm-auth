@@ -1,0 +1,196 @@
+{
+  "session": "20261123-0703-codebase-audit",
+  "createdAt": "2026-11-23T07:25:00Z",
+  "track": "standard",
+  "baseBranch": "main",
+  "contracts": [
+    "contracts/finding-format.md"
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Audit backend Domain and Application layers",
+      "agent": "sir-backend-engineer",
+      "domain": "backend",
+      "owns": [
+        ".sir/sessions/20261123-0703-codebase-audit/audit/backend-domain-application.md"
+      ],
+      "dependsOn": [],
+      "acceptance": [
+        "`.sir/sessions/20261123-0703-codebase-audit/audit/backend-domain-application.md` exists in the worktree and has the shape of contracts/finding-format.md section 4: a first line `# Audit: backend (T1)`, a line `Ref: 5b7d9a6`, and the level-2 headings `## Scope`, `## Files`, `## Rules checked`, `## Findings` in that order.",
+        "`## Files` covers the whole T1 population: with R set to the worktree root, the loop `<T1 scope command from contracts/finding-format.md section 1> | sed \"s|^$R/||\" | while read p; do grep -qF -- \"- \\`$p\\` \" .sir/sessions/20261123-0703-codebase-audit/audit/backend-domain-application.md || echo \"MISSING $p\"; done` prints nothing, and each matched line ends in finding IDs or `no finding` (predicate check: `src/DMAuth.Domain/Entities/User/User.cs` is printed by the scope command and is matched by its `## Files` line).",
+        "`## Rules checked` covers every rule heading of the wired fragments (`.sir/disciplines/csharp-style.md`, `.sir/disciplines/dotnet.md`, `.sir/disciplines/efcore.md`): `for f in csharp-style.md dotnet.md efcore.md; do grep '^## ' .sir/disciplines/$f | sed 's/^## //' | while read h; do grep -qF -- \"\\`$f\\` § $h — \" .sir/sessions/20261123-0703-codebase-audit/audit/backend-domain-application.md || echo \"MISSING $f § $h\"; done; done` prints nothing, and each such line ends in finding IDs, `conforms`, or `n/a: <reason>` (encodes the session decision that `.sir/disciplines/` is the first reference standard).",
+        "Every record under `## Findings` is valid per contracts/finding-format.md section 3: ID matches `^DA-[0-9]{3}$`, fields Severity, Layer, Location, Rule, Moves, What, Why, Verify, (optional Census), Evidence each appear exactly once and in that order, Severity is exactly one of `correctness/security risk`, `convention drift`, `hygiene`, and Layer is `backend`.",
+        "Every `path:line` Location in .sir/sessions/20261123-0703-codebase-audit/audit/backend-domain-application.md reproduces at 5b7d9a6: for each one, `sed -n '<line>p' <path>` run in the worktree prints exactly the text after `<line>:` on the matching Evidence line, and every path is one the T1 scope command prints, or a `.sir/disciplines/<fragment>.md` line on a `Moves: discipline` record. Checked for every location, not a sample.",
+        "Every Rule source in .sir/sessions/20261123-0703-codebase-audit/audit/backend-domain-application.md is well formed: each `discipline .sir/disciplines/<fragment>.md § <heading>` names a heading present verbatim as `## <heading>` in that fragment (`grep -qxF '## <heading>' .sir/disciplines/<fragment>.md`), and each `external` source carries an `https://` URL (session decision: a best-practice finding cites its source).",
+        "Every record whose Rule includes a `discipline` or `base` source has `Moves: code` or `Moves: discipline`, never `n/a`, and every `Moves: discipline` record also lists the `.sir/disciplines/<fragment>.md:<line>` of the rule to restate in its Location (encodes `.sir/lessons.md` lesson 1: the code is evidence and the finding says which side moves).",
+        "Every `Census` field names a command whose search roots exclude `.sir/` (so the audit file cannot change its own count), and re-running that command in the worktree prints the stated integer.",
+        "The task's commit changes exactly one path, `.sir/sessions/20261123-0703-codebase-audit/audit/backend-domain-application.md` (`git diff --name-only <startRef> <task tip>` prints only it): no product, test, config, workflow, docs or `.sir/disciplines/` file is modified."
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "Audit backend Infrastructure (non-persistence), Web host and solution file",
+      "agent": "sir-backend-engineer",
+      "domain": "backend",
+      "owns": [
+        ".sir/sessions/20261123-0703-codebase-audit/audit/backend-infrastructure-web.md"
+      ],
+      "dependsOn": [],
+      "acceptance": [
+        "`.sir/sessions/20261123-0703-codebase-audit/audit/backend-infrastructure-web.md` exists in the worktree and has the shape of contracts/finding-format.md section 4: a first line `# Audit: backend (T2)`, a line `Ref: 5b7d9a6`, and the level-2 headings `## Scope`, `## Files`, `## Rules checked`, `## Findings` in that order.",
+        "`## Files` covers the whole T2 population: with R set to the worktree root, the loop `<T2 scope command from contracts/finding-format.md section 1> | sed \"s|^$R/||\" | while read p; do grep -qF -- \"- \\`$p\\` \" .sir/sessions/20261123-0703-codebase-audit/audit/backend-infrastructure-web.md || echo \"MISSING $p\"; done` prints nothing, and each matched line ends in finding IDs or `no finding` (predicate check: `src/DMAuth.Web/Program.cs` is printed by the scope command and is matched by its `## Files` line).",
+        "`## Rules checked` covers every rule heading of the wired fragments (`.sir/disciplines/csharp-style.md`, `.sir/disciplines/dotnet.md`, `.sir/disciplines/efcore.md`): `for f in csharp-style.md dotnet.md efcore.md; do grep '^## ' .sir/disciplines/$f | sed 's/^## //' | while read h; do grep -qF -- \"\\`$f\\` § $h — \" .sir/sessions/20261123-0703-codebase-audit/audit/backend-infrastructure-web.md || echo \"MISSING $f § $h\"; done; done` prints nothing, and each such line ends in finding IDs, `conforms`, or `n/a: <reason>` (encodes the session decision that `.sir/disciplines/` is the first reference standard).",
+        "Every record under `## Findings` is valid per contracts/finding-format.md section 3: ID matches `^IW-[0-9]{3}$`, fields Severity, Layer, Location, Rule, Moves, What, Why, Verify, (optional Census), Evidence each appear exactly once and in that order, Severity is exactly one of `correctness/security risk`, `convention drift`, `hygiene`, and Layer is `backend`.",
+        "Every `path:line` Location in .sir/sessions/20261123-0703-codebase-audit/audit/backend-infrastructure-web.md reproduces at 5b7d9a6: for each one, `sed -n '<line>p' <path>` run in the worktree prints exactly the text after `<line>:` on the matching Evidence line, and every path is one the T2 scope command prints, or a `.sir/disciplines/<fragment>.md` line on a `Moves: discipline` record. Checked for every location, not a sample.",
+        "Every Rule source in .sir/sessions/20261123-0703-codebase-audit/audit/backend-infrastructure-web.md is well formed: each `discipline .sir/disciplines/<fragment>.md § <heading>` names a heading present verbatim as `## <heading>` in that fragment (`grep -qxF '## <heading>' .sir/disciplines/<fragment>.md`), and each `external` source carries an `https://` URL (session decision: a best-practice finding cites its source).",
+        "Every record whose Rule includes a `discipline` or `base` source has `Moves: code` or `Moves: discipline`, never `n/a`, and every `Moves: discipline` record also lists the `.sir/disciplines/<fragment>.md:<line>` of the rule to restate in its Location (encodes `.sir/lessons.md` lesson 1: the code is evidence and the finding says which side moves).",
+        "Every `Census` field names a command whose search roots exclude `.sir/` (so the audit file cannot change its own count), and re-running that command in the worktree prints the stated integer.",
+        "The task's commit changes exactly one path, `.sir/sessions/20261123-0703-codebase-audit/audit/backend-infrastructure-web.md` (`git diff --name-only <startRef> <task tip>` prints only it): no product, test, config, workflow, docs or `.sir/disciplines/` file is modified.",
+        "`## Findings` holds a record with Severity `correctness/security risk` whose Location includes `src/DMAuth.Infrastructure/DMAuth.Infrastructure.csproj:11` (the `Microsoft.Extensions.DependencyInjection.Abstractions` `Version=\"10.0.7\"` reference, line taken with `grep -n` at 5b7d9a6) and whose What/Why state that `dotnet build src/DM-Auth.sln` fails restore with NU1605 (downgrade from 10.0.15 to 10.0.7) under warnings-as-errors, as observed by the discuss-phase probe; its Verify names a restore/build command."
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "Audit EF Core persistence: DbContext, configurations, repositories, migrations",
+      "agent": "sir-database-engineer",
+      "domain": "database",
+      "owns": [
+        ".sir/sessions/20261123-0703-codebase-audit/audit/database.md"
+      ],
+      "dependsOn": [],
+      "acceptance": [
+        "`.sir/sessions/20261123-0703-codebase-audit/audit/database.md` exists in the worktree and has the shape of contracts/finding-format.md section 4: a first line `# Audit: database (T3)`, a line `Ref: 5b7d9a6`, and the level-2 headings `## Scope`, `## Files`, `## Rules checked`, `## Findings` in that order.",
+        "`## Files` covers the whole T3 population: with R set to the worktree root, the loop `<T3 scope command from contracts/finding-format.md section 1> | sed \"s|^$R/||\" | while read p; do grep -qF -- \"- \\`$p\\` \" .sir/sessions/20261123-0703-codebase-audit/audit/database.md || echo \"MISSING $p\"; done` prints nothing, and each matched line ends in finding IDs or `no finding` (predicate check: `src/DMAuth.Infrastructure/Persistence/DmAuthDbContext.cs` is printed by the scope command and is matched by its `## Files` line).",
+        "`## Rules checked` covers every rule heading of the wired fragments (`.sir/disciplines/csharp-style.md`, `.sir/disciplines/efcore.md`): `for f in csharp-style.md efcore.md; do grep '^## ' .sir/disciplines/$f | sed 's/^## //' | while read h; do grep -qF -- \"\\`$f\\` § $h — \" .sir/sessions/20261123-0703-codebase-audit/audit/database.md || echo \"MISSING $f § $h\"; done; done` prints nothing, and each such line ends in finding IDs, `conforms`, or `n/a: <reason>` (encodes the session decision that `.sir/disciplines/` is the first reference standard).",
+        "Every record under `## Findings` is valid per contracts/finding-format.md section 3: ID matches `^DB-[0-9]{3}$`, fields Severity, Layer, Location, Rule, Moves, What, Why, Verify, (optional Census), Evidence each appear exactly once and in that order, Severity is exactly one of `correctness/security risk`, `convention drift`, `hygiene`, and Layer is `database`.",
+        "Every `path:line` Location in .sir/sessions/20261123-0703-codebase-audit/audit/database.md reproduces at 5b7d9a6: for each one, `sed -n '<line>p' <path>` run in the worktree prints exactly the text after `<line>:` on the matching Evidence line, and every path is one the T3 scope command prints, or a `.sir/disciplines/<fragment>.md` line on a `Moves: discipline` record. Checked for every location, not a sample.",
+        "Every Rule source in .sir/sessions/20261123-0703-codebase-audit/audit/database.md is well formed: each `discipline .sir/disciplines/<fragment>.md § <heading>` names a heading present verbatim as `## <heading>` in that fragment (`grep -qxF '## <heading>' .sir/disciplines/<fragment>.md`), and each `external` source carries an `https://` URL (session decision: a best-practice finding cites its source).",
+        "Every record whose Rule includes a `discipline` or `base` source has `Moves: code` or `Moves: discipline`, never `n/a`, and every `Moves: discipline` record also lists the `.sir/disciplines/<fragment>.md:<line>` of the rule to restate in its Location (encodes `.sir/lessons.md` lesson 1: the code is evidence and the finding says which side moves).",
+        "Every `Census` field names a command whose search roots exclude `.sir/` (so the audit file cannot change its own count), and re-running that command in the worktree prints the stated integer.",
+        "The task's commit changes exactly one path, `.sir/sessions/20261123-0703-codebase-audit/audit/database.md` (`git diff --name-only <startRef> <task tip>` prints only it): no product, test, config, workflow, docs or `.sir/disciplines/` file is modified."
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "Audit frontend DMAuth.Client source and config (excluding tests and coverage)",
+      "agent": "sir-frontend-engineer",
+      "domain": "frontend",
+      "owns": [
+        ".sir/sessions/20261123-0703-codebase-audit/audit/frontend.md"
+      ],
+      "dependsOn": [],
+      "acceptance": [
+        "`.sir/sessions/20261123-0703-codebase-audit/audit/frontend.md` exists in the worktree and has the shape of contracts/finding-format.md section 4: a first line `# Audit: frontend (T4)`, a line `Ref: 5b7d9a6`, and the level-2 headings `## Scope`, `## Files`, `## Rules checked`, `## Findings` in that order.",
+        "`## Files` covers the whole T4 population: with R set to the worktree root, the loop `<T4 scope command from contracts/finding-format.md section 1> | sed \"s|^$R/||\" | while read p; do grep -qF -- \"- \\`$p\\` \" .sir/sessions/20261123-0703-codebase-audit/audit/frontend.md || echo \"MISSING $p\"; done` prints nothing, and each matched line ends in finding IDs or `no finding` (predicate check: `src/DMAuth.Client/src/auth/AuthProvider.tsx` is printed by the scope command and is matched by its `## Files` line).",
+        "`## Rules checked` covers every rule heading of the wired fragments (`.sir/disciplines/typescript-style.md`, `.sir/disciplines/react.md`): `for f in typescript-style.md react.md; do grep '^## ' .sir/disciplines/$f | sed 's/^## //' | while read h; do grep -qF -- \"\\`$f\\` § $h — \" .sir/sessions/20261123-0703-codebase-audit/audit/frontend.md || echo \"MISSING $f § $h\"; done; done` prints nothing, and each such line ends in finding IDs, `conforms`, or `n/a: <reason>` (encodes the session decision that `.sir/disciplines/` is the first reference standard).",
+        "Every record under `## Findings` is valid per contracts/finding-format.md section 3: ID matches `^FE-[0-9]{3}$`, fields Severity, Layer, Location, Rule, Moves, What, Why, Verify, (optional Census), Evidence each appear exactly once and in that order, Severity is exactly one of `correctness/security risk`, `convention drift`, `hygiene`, and Layer is `frontend`.",
+        "Every `path:line` Location in .sir/sessions/20261123-0703-codebase-audit/audit/frontend.md reproduces at 5b7d9a6: for each one, `sed -n '<line>p' <path>` run in the worktree prints exactly the text after `<line>:` on the matching Evidence line, and every path is one the T4 scope command prints, or a `.sir/disciplines/<fragment>.md` line on a `Moves: discipline` record. Checked for every location, not a sample.",
+        "Every Rule source in .sir/sessions/20261123-0703-codebase-audit/audit/frontend.md is well formed: each `discipline .sir/disciplines/<fragment>.md § <heading>` names a heading present verbatim as `## <heading>` in that fragment (`grep -qxF '## <heading>' .sir/disciplines/<fragment>.md`), and each `external` source carries an `https://` URL (session decision: a best-practice finding cites its source).",
+        "Every record whose Rule includes a `discipline` or `base` source has `Moves: code` or `Moves: discipline`, never `n/a`, and every `Moves: discipline` record also lists the `.sir/disciplines/<fragment>.md:<line>` of the rule to restate in its Location (encodes `.sir/lessons.md` lesson 1: the code is evidence and the finding says which side moves).",
+        "Every `Census` field names a command whose search roots exclude `.sir/` (so the audit file cannot change its own count), and re-running that command in the worktree prints the stated integer.",
+        "The task's commit changes exactly one path, `.sir/sessions/20261123-0703-codebase-audit/audit/frontend.md` (`git diff --name-only <startRef> <task tip>` prints only it): no product, test, config, workflow, docs or `.sir/disciplines/` file is modified."
+      ]
+    },
+    {
+      "id": "T5",
+      "title": "Audit .NET unit and integration test projects",
+      "agent": "sir-test-engineer",
+      "domain": "test",
+      "owns": [
+        ".sir/sessions/20261123-0703-codebase-audit/audit/tests-dotnet.md"
+      ],
+      "dependsOn": [],
+      "acceptance": [
+        "`.sir/sessions/20261123-0703-codebase-audit/audit/tests-dotnet.md` exists in the worktree and has the shape of contracts/finding-format.md section 4: a first line `# Audit: test (T5)`, a line `Ref: 5b7d9a6`, and the level-2 headings `## Scope`, `## Files`, `## Rules checked`, `## Findings` in that order.",
+        "`## Files` covers the whole T5 population: with R set to the worktree root, the loop `<T5 scope command from contracts/finding-format.md section 1> | sed \"s|^$R/||\" | while read p; do grep -qF -- \"- \\`$p\\` \" .sir/sessions/20261123-0703-codebase-audit/audit/tests-dotnet.md || echo \"MISSING $p\"; done` prints nothing, and each matched line ends in finding IDs or `no finding` (predicate check: `tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj` is printed by the scope command and is matched by its `## Files` line).",
+        "`## Rules checked` covers every rule heading of the wired fragments (`.sir/disciplines/csharp-style.md`, `.sir/disciplines/dotnet-tests.md`): `for f in csharp-style.md dotnet-tests.md; do grep '^## ' .sir/disciplines/$f | sed 's/^## //' | while read h; do grep -qF -- \"\\`$f\\` § $h — \" .sir/sessions/20261123-0703-codebase-audit/audit/tests-dotnet.md || echo \"MISSING $f § $h\"; done; done` prints nothing, and each such line ends in finding IDs, `conforms`, or `n/a: <reason>` (encodes the session decision that `.sir/disciplines/` is the first reference standard).",
+        "Every record under `## Findings` is valid per contracts/finding-format.md section 3: ID matches `^NT-[0-9]{3}$`, fields Severity, Layer, Location, Rule, Moves, What, Why, Verify, (optional Census), Evidence each appear exactly once and in that order, Severity is exactly one of `correctness/security risk`, `convention drift`, `hygiene`, and Layer is `test`.",
+        "Every `path:line` Location in .sir/sessions/20261123-0703-codebase-audit/audit/tests-dotnet.md reproduces at 5b7d9a6: for each one, `sed -n '<line>p' <path>` run in the worktree prints exactly the text after `<line>:` on the matching Evidence line, and every path is one the T5 scope command prints, or a `.sir/disciplines/<fragment>.md` line on a `Moves: discipline` record. Checked for every location, not a sample.",
+        "Every Rule source in .sir/sessions/20261123-0703-codebase-audit/audit/tests-dotnet.md is well formed: each `discipline .sir/disciplines/<fragment>.md § <heading>` names a heading present verbatim as `## <heading>` in that fragment (`grep -qxF '## <heading>' .sir/disciplines/<fragment>.md`), and each `external` source carries an `https://` URL (session decision: a best-practice finding cites its source).",
+        "Every record whose Rule includes a `discipline` or `base` source has `Moves: code` or `Moves: discipline`, never `n/a`, and every `Moves: discipline` record also lists the `.sir/disciplines/<fragment>.md:<line>` of the rule to restate in its Location (encodes `.sir/lessons.md` lesson 1: the code is evidence and the finding says which side moves).",
+        "Every `Census` field names a command whose search roots exclude `.sir/` (so the audit file cannot change its own count), and re-running that command in the worktree prints the stated integer.",
+        "The task's commit changes exactly one path, `.sir/sessions/20261123-0703-codebase-audit/audit/tests-dotnet.md` (`git diff --name-only <startRef> <task tip>` prints only it): no product, test, config, workflow, docs or `.sir/disciplines/` file is modified.",
+        "`## Findings` holds a record with Severity `correctness/security risk` whose Location includes `tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj` and whose What/Why state that `dotnet test tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj` printed no test results and exited 0 in the spec-phase probe, give the cause as read from the test project files (and `Directory.Build.props` where relevant), and state whether `tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj` shares it; its Verify names a test command and the non-zero test count it must report (Gate 2 decision D2)."
+      ]
+    },
+    {
+      "id": "T6",
+      "title": "Audit client tests: Vitest specs, test setup, Playwright e2e and test config",
+      "agent": "sir-test-engineer",
+      "domain": "test",
+      "owns": [
+        ".sir/sessions/20261123-0703-codebase-audit/audit/tests-client.md"
+      ],
+      "dependsOn": [],
+      "acceptance": [
+        "`.sir/sessions/20261123-0703-codebase-audit/audit/tests-client.md` exists in the worktree and has the shape of contracts/finding-format.md section 4: a first line `# Audit: test (T6)`, a line `Ref: 5b7d9a6`, and the level-2 headings `## Scope`, `## Files`, `## Rules checked`, `## Findings` in that order.",
+        "`## Files` covers the whole T6 population: with R set to the worktree root, the loop `<T6 scope command from contracts/finding-format.md section 1> | sed \"s|^$R/||\" | while read p; do grep -qF -- \"- \\`$p\\` \" .sir/sessions/20261123-0703-codebase-audit/audit/tests-client.md || echo \"MISSING $p\"; done` prints nothing, and each matched line ends in finding IDs or `no finding` (predicate check: `src/DMAuth.Client/tests/e2e/auth.setup.ts` is printed by the scope command and is matched by its `## Files` line).",
+        "`## Rules checked` covers every rule heading of the wired fragments (`.sir/disciplines/typescript-style.md`, `.sir/disciplines/client-tests.md`): `for f in typescript-style.md client-tests.md; do grep '^## ' .sir/disciplines/$f | sed 's/^## //' | while read h; do grep -qF -- \"\\`$f\\` § $h — \" .sir/sessions/20261123-0703-codebase-audit/audit/tests-client.md || echo \"MISSING $f § $h\"; done; done` prints nothing, and each such line ends in finding IDs, `conforms`, or `n/a: <reason>` (encodes the session decision that `.sir/disciplines/` is the first reference standard).",
+        "Every record under `## Findings` is valid per contracts/finding-format.md section 3: ID matches `^CT-[0-9]{3}$`, fields Severity, Layer, Location, Rule, Moves, What, Why, Verify, (optional Census), Evidence each appear exactly once and in that order, Severity is exactly one of `correctness/security risk`, `convention drift`, `hygiene`, and Layer is `test`.",
+        "Every `path:line` Location in .sir/sessions/20261123-0703-codebase-audit/audit/tests-client.md reproduces at 5b7d9a6: for each one, `sed -n '<line>p' <path>` run in the worktree prints exactly the text after `<line>:` on the matching Evidence line, and every path is one the T6 scope command prints, or a `.sir/disciplines/<fragment>.md` line on a `Moves: discipline` record. Checked for every location, not a sample.",
+        "Every Rule source in .sir/sessions/20261123-0703-codebase-audit/audit/tests-client.md is well formed: each `discipline .sir/disciplines/<fragment>.md § <heading>` names a heading present verbatim as `## <heading>` in that fragment (`grep -qxF '## <heading>' .sir/disciplines/<fragment>.md`), and each `external` source carries an `https://` URL (session decision: a best-practice finding cites its source).",
+        "Every record whose Rule includes a `discipline` or `base` source has `Moves: code` or `Moves: discipline`, never `n/a`, and every `Moves: discipline` record also lists the `.sir/disciplines/<fragment>.md:<line>` of the rule to restate in its Location (encodes `.sir/lessons.md` lesson 1: the code is evidence and the finding says which side moves).",
+        "Every `Census` field names a command whose search roots exclude `.sir/` (so the audit file cannot change its own count), and re-running that command in the worktree prints the stated integer.",
+        "The task's commit changes exactly one path, `.sir/sessions/20261123-0703-codebase-audit/audit/tests-client.md` (`git diff --name-only <startRef> <task tip>` prints only it): no product, test, config, workflow, docs or `.sir/disciplines/` file is modified."
+      ]
+    },
+    {
+      "id": "T7",
+      "title": "Audit repo-level surface: build props, editorconfig, gitignores, coverage output, CI workflows, eng/dev, docs, CLAUDE.md",
+      "agent": "sir-architect",
+      "domain": "architecture",
+      "owns": [
+        ".sir/sessions/20261123-0703-codebase-audit/audit/repo.md"
+      ],
+      "dependsOn": [],
+      "acceptance": [
+        "`.sir/sessions/20261123-0703-codebase-audit/audit/repo.md` exists in the worktree and has the shape of contracts/finding-format.md section 4: a first line `# Audit: repo (T7)`, a line `Ref: 5b7d9a6`, and the level-2 headings `## Scope`, `## Files`, `## Rules checked`, `## Findings` in that order.",
+        "`## Files` covers the whole T7 list: for each of the 13 entries listed under T7 in contracts/finding-format.md section 1, `grep -qF -- \"- \\`<entry>\\` \" .sir/sessions/20261123-0703-codebase-audit/audit/repo.md` succeeds, and each matched line ends in finding IDs or `no finding`.",
+        "Every record under `## Findings` is valid per contracts/finding-format.md section 3: ID matches `^RP-[0-9]{3}$`, fields Severity, Layer, Location, Rule, Moves, What, Why, Verify, (optional Census), Evidence each appear exactly once and in that order, Severity is exactly one of `correctness/security risk`, `convention drift`, `hygiene`, and Layer is `repo`.",
+        "Every `path:line` Location in .sir/sessions/20261123-0703-codebase-audit/audit/repo.md reproduces at 5b7d9a6: for each one, `sed -n '<line>p' <path>` run in the worktree prints exactly the text after `<line>:` on the matching Evidence line, and every path is an entry of the T7 fixed list in contracts/finding-format.md section 1 or a file under its `src/DMAuth.Client/coverage/` entry, or a `.sir/disciplines/<fragment>.md` line on a `Moves: discipline` record. Checked for every location, not a sample.",
+        "Every Rule source in .sir/sessions/20261123-0703-codebase-audit/audit/repo.md is well formed: each `discipline .sir/disciplines/<fragment>.md § <heading>` names a heading present verbatim as `## <heading>` in that fragment (`grep -qxF '## <heading>' .sir/disciplines/<fragment>.md`), and each `external` source carries an `https://` URL (session decision: a best-practice finding cites its source).",
+        "Every record whose Rule includes a `discipline` or `base` source has `Moves: code` or `Moves: discipline`, never `n/a`, and every `Moves: discipline` record also lists the `.sir/disciplines/<fragment>.md:<line>` of the rule to restate in its Location (encodes `.sir/lessons.md` lesson 1: the code is evidence and the finding says which side moves).",
+        "Every `Census` field names a command whose search roots exclude `.sir/` (so the audit file cannot change its own count), and re-running that command in the worktree prints the stated integer.",
+        "The task's commit changes exactly one path, `.sir/sessions/20261123-0703-codebase-audit/audit/repo.md` (`git diff --name-only <startRef> <task tip>` prints only it): no product, test, config, workflow, docs or `.sir/disciplines/` file is modified.",
+        "`## Rules checked` lists the best-practice areas checked for the T7 list (at minimum: GitHub Actions workflow security and hygiene, .NET build configuration, git ignore of generated output, local dev environment scripts, documentation accuracy against the code), each line carrying an `external` source with an `https://` URL.",
+        "`## Findings` holds a record whose Location includes `src/DMAuth.Client/coverage/` stating that generated coverage output is committed, with a `Census` field whose command counts the files under `src/DMAuth.Client/coverage` without reading `.sir/` and whose stated integer the command reproduces in the worktree, and whose What names the ignore rule and removal to make."
+      ]
+    },
+    {
+      "id": "T8",
+      "title": "Consolidate and deduplicate findings into .sir/backlog.md rows and the audit disposition index",
+      "agent": "sir-architect",
+      "domain": "architecture",
+      "owns": [
+        ".sir/backlog.md",
+        ".sir/sessions/20261123-0703-codebase-audit/audit/README.md"
+      ],
+      "dependsOn": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "T7"
+      ],
+      "acceptance": [
+        "Pre-session backlog content is preserved byte for byte (declared preserved behaviour, newly tested): `head -c 1066 .sir/backlog.md | sha256sum` prints `c46d358d5bb3df126f84c4b87546e79427796be7da930b6631818e8438194792`, the sha256 of the whole 1066-byte file at 5b7d9a6 (measured with `sha256sum` and `wc -c` on the base worktree copy during spec).",
+        "Every appended line is a well-formed row per contracts/finding-format.md section 5: `tail -c +1067 .sir/backlog.md | grep -cvE '^2026-11-23 20261123-0703-codebase-audit \\[(correctness/security risk|convention drift|hygiene)\\] .+ Where \\(at 5b7d9a6\\): .+ Why: .+ Verify: .+ \\(audit: (DA|IW|DB|FE|NT|CT|RP)-[0-9]{3}(, (DA|IW|DB|FE|NT|CT|RP)-[0-9]{3})*\\)$'` prints `0`, the same command with `-cE` prints a positive integer, and the control `head -c 1066 .sir/backlog.md | grep -cE '<same regex>'` prints `0` (the two pre-session rows, which carry no tag, must not match).",
+        "Each appended row carries exactly one severity tag: `tail -c +1067 .sir/backlog.md | grep -oE '\\[(correctness/security risk|convention drift|hygiene)\\]' | wc -l` equals `tail -c +1067 .sir/backlog.md | wc -l`.",
+        "The appended region holds no blank line and the file ends in a single LF: `tail -c +1067 .sir/backlog.md | grep -c '^$'` prints `0` and `tail -c 1 .sir/backlog.md | od -c` shows `\\n`.",
+        "`.sir/sessions/20261123-0703-codebase-audit/audit/README.md` exists with level-2 headings `## Audit files`, `## Dispositions`, `## Merges` per contracts/finding-format.md section 6, and `## Audit files` names each of the seven layer audit files.",
+        "No finding is silently dropped: `grep -hoE '^### (DA|IW|DB|FE|NT|CT|RP)-[0-9]{3}' .sir/sessions/20261123-0703-codebase-audit/audit/backend-domain-application.md .sir/sessions/20261123-0703-codebase-audit/audit/backend-infrastructure-web.md .sir/sessions/20261123-0703-codebase-audit/audit/database.md .sir/sessions/20261123-0703-codebase-audit/audit/frontend.md .sir/sessions/20261123-0703-codebase-audit/audit/tests-dotnet.md .sir/sessions/20261123-0703-codebase-audit/audit/tests-client.md .sir/sessions/20261123-0703-codebase-audit/audit/repo.md | cut -c5- | sort` and `grep -oE '^- (DA|IW|DB|FE|NT|CT|RP)-[0-9]{3} — ' .sir/sessions/20261123-0703-codebase-audit/audit/README.md | cut -c3-8 | sort` produce identical output (`diff` prints nothing), so every finding ID has exactly one disposition line.",
+        "Rows and `row` dispositions correspond one to one: `tail -c +1067 .sir/backlog.md | sed -nE 's/.*\\(audit: ([^)]*)\\)$/\\1/p' | tr ',' '\\n' | tr -d ' ' | sort` equals `grep -oE '^- (DA|IW|DB|FE|NT|CT|RP)-[0-9]{3} — row$' .sir/sessions/20261123-0703-codebase-audit/audit/README.md | cut -c3-8 | sort`, and the first of these piped to `uniq -d` prints nothing (no ID in two rows).",
+        "Each appended row's severity is the highest (correctness/security risk > convention drift > hygiene) among the Severity fields of the audit records its `(audit: ...)` list names; checked for every row.",
+        "Each appended row's `Where (at 5b7d9a6):` segment holds the union of the Location values of the records it names (above ten sites, the first ten plus `(+<n> more, see audit <ID>)`), and its What, Why and Verify carry the substance of those records; checked for every row.",
+        "Every `existing` disposition names one of the two pre-session rows (the `GetUserInfo` layout/validator row or the `didInit` restatement row) and the finding it disposes asks for the same change; and no appended row asks for either of those two changes (adding `GetUserInfoValidator` / renaming `UserInfoResponse`, or restating the `didInit` bullet of `.sir/disciplines/react.md`).",
+        "No two appended rows ask for the same change: every pair of appended rows sharing a Location path is checked and describes different changes; every multi-ID row has a line in `## Merges` naming its IDs and why they are one change.",
+        "Every `withdrawn` disposition names the contracts/finding-format.md section 3 check that failed, and the reviewer reproduces that failure against the cited record.",
+        "Appended rows are ordered by severity (correctness/security risk, then convention drift, then hygiene), then by their first audit ID.",
+        "The task's commit changes exactly `.sir/backlog.md` and `.sir/sessions/20261123-0703-codebase-audit/audit/README.md` (`git diff --name-only <startRef> <task tip>`); the seven layer audit files are unchanged by it."
+      ]
+    }
+  ]
+}
