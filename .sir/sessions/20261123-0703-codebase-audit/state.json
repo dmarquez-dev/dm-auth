@@ -1,0 +1,53 @@
+{
+  "session": "20261123-0703-codebase-audit",
+  "updatedAt": "2026-11-23T18:47:35Z",
+  "worktree": "/c/Users/dmarq/Development/Repos/dm-auth/.claude-worktrees/20261123-0703-codebase-audit",
+  "branch": "chore/codebase-audit",
+  "verification": [
+    {
+      "command": "dotnet build src/DM-Auth.sln",
+      "runnable": false,
+      "probe": "re-probed at tip 2ad7abc: src\\DMAuth.Infrastructure\\DMAuth.Infrastructure.csproj : error NU1605: Warning As Error: Detected package downgrade: Microsoft.Extensions.DependencyInjection.Abstractions from 10.0.15 to 10.0.7. ... 1 Error(s), exit=1"
+    },
+    {
+      "command": "dotnet test tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj",
+      "runnable": false,
+      "probe": "re-probed at tip 2ad7abc: 2 lines of output (Determining projects to restore... / All projects are up-to-date for restore.), no test results, exit=0"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client run lint",
+      "runnable": false,
+      "probe": "re-probed at tip 2ad7abc: 'eslint' is not recognized as an internal or external command, exit=1 (worktree has no node_modules)"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client run test",
+      "runnable": false,
+      "probe": "re-probed at tip 2ad7abc: 'vitest' is not recognized as an internal or external command, exit=1"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client run build",
+      "runnable": false,
+      "probe": "re-probed at tip 2ad7abc: 'tsc' is not recognized as an internal or external command, exit=1"
+    }
+  ],
+  "tasks": [
+    { "id": "T1", "status": "done", "startRef": "5b7d9a65bf35e5d229c76274b8af21a07fc8adeb", "model": "opus", "commit": "51699c8", "revisionRounds": 0 },
+    { "id": "T2", "status": "done", "startRef": "5b7d9a65bf35e5d229c76274b8af21a07fc8adeb", "model": "opus", "commit": "4827d5d", "revisionRounds": 0 },
+    { "id": "T3", "status": "done", "startRef": "5b7d9a65bf35e5d229c76274b8af21a07fc8adeb", "model": "opus", "commit": "f547a6b", "revisionRounds": 0 },
+    { "id": "T4", "status": "done", "startRef": "5b7d9a65bf35e5d229c76274b8af21a07fc8adeb", "model": "opus", "commit": "ebb6c3a", "revisionRounds": 0 },
+    { "id": "T5", "status": "done", "startRef": "5b7d9a65bf35e5d229c76274b8af21a07fc8adeb", "model": "opus", "commit": "3654754", "revisionRounds": 0 },
+    { "id": "T6", "status": "done", "startRef": "5b7d9a65bf35e5d229c76274b8af21a07fc8adeb", "model": "opus", "commit": "3a08d6a", "revisionRounds": 0 },
+    { "id": "T7", "status": "done", "startRef": "5b7d9a65bf35e5d229c76274b8af21a07fc8adeb", "model": "opus", "commit": "4677f26", "revisionRounds": 0 },
+    { "id": "T8", "status": "done", "startRef": "3a08d6a3bedd14a6608f76997b8d7b1841d9f740", "model": "opus", "commit": "c20cd6d", "revisionRounds": 1 }
+  ],
+  "escalations": [
+    {
+      "id": "E1",
+      "question": "Where do the audit's findings land: .sir/backlog.md only, or also as Jira issues?",
+      "reason": "external-contract",
+      "resolved": true,
+      "answer": "Gate 1: findings land in .sir/backlog.md only. No Jira issues, nothing published outside the repository."
+    }
+  ],
+  "metrics": { "userInteractions": 3, "escalationsRaised": 1, "reviewRounds": 1 }
+}

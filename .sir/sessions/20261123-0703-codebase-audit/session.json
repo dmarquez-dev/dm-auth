@@ -1,0 +1,49 @@
+{
+  "id": "20261123-0703-codebase-audit",
+  "name": "codebase-audit",
+  "scope": "standard",
+  "branchType": "chore",
+  "integration": "pr",
+  "status": "WRAPPED",
+  "brief": "Read-only audit of the whole DM Auth repository at 5b7d9a6 against the project's .sir/disciplines/ fragments first, then common .NET, EF Core, React/TypeScript, testing, Playwright and GitHub Actions best practice. Seven parallel audit tasks (backend Domain/Application, Infrastructure/Web, EF persistence, client source, .NET tests, client tests and e2e, repo-level surface) each write one finding file under the session's audit/ directory in contracts/finding-format.md's record format, with line citations that reproduce, a severity of correctness/security risk, convention drift or hygiene, and which side moves where a rule and the code disagree. A consolidating task deduplicates the findings into severity-tagged rows appended to .sir/backlog.md, leaving the two existing rows byte-identical, plus a disposition index. Known findings to record: the NU1605 restore failure in DMAuth.Infrastructure.csproj, a unit test project on which dotnet test runs no tests, and 65 committed coverage files. No product, test, config or discipline file changes, nothing is published outside the repository, and the session lands through a merged pull request into main.",
+  "started": "2026-11-23T07:03:05Z",
+  "ended": "2026-11-23T18:55:22Z",
+  "parent": null,
+  "children": [],
+  "runs": [
+    {
+      "cc": "fdfdc9e7-96dd-4121-8485-a1a858bc2abe",
+      "phase": "discuss",
+      "sir": "1.0.54",
+      "started": "2026-11-23T07:03:05Z",
+      "ended": "2026-11-23T07:09:19Z",
+      "outcome": "complete"
+    },
+    {
+      "cc": "73b6917e-fc21-4f60-8b3b-b5bf0e109749",
+      "phase": "spec",
+      "sir": "1.0.54",
+      "started": "2026-11-23T07:12:55Z",
+      "ended": "2026-11-23T07:41:10Z",
+      "outcome": "complete"
+    },
+    {
+      "cc": "246f5150-8f11-4adb-973d-32214adf6597",
+      "phase": "implement",
+      "sir": "1.0.54",
+      "started": "2026-11-23T07:43:23Z",
+      "ended": "2026-11-23T09:01:45Z",
+      "outcome": "complete"
+    },
+    {
+      "cc": "13e966cd-5318-4391-a1ed-dee3913c064a",
+      "phase": "review",
+      "sir": "1.0.54",
+      "started": "2026-11-23T18:27:57Z",
+      "ended": "2026-11-23T18:55:04Z",
+      "outcome": "complete"
+    }
+  ],
+  "metrics": { "userInteractions": 3, "escalationsRaised": 1, "reviewRounds": 1 },
+  "pushed": true
+}
