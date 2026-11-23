@@ -27,7 +27,6 @@
     "test": ["csharp-style", "typescript-style", "dotnet-tests", "client-tests"]
   },
   "git": {
-    "branchPrefix": "sir/",
     "worktreeRoot": ".claude-worktrees/"
   },
   "upkeep": {
