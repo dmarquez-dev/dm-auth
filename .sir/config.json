@@ -27,7 +27,8 @@
     "test": ["csharp-style", "typescript-style", "dotnet-tests", "client-tests"]
   },
   "git": {
-    "worktreeRoot": ".claude-worktrees/"
+    "worktreeRoot": ".claude-worktrees/",
+    "integration": "pr"
   },
   "upkeep": {
     "retiredRetentionSessions": 10,
