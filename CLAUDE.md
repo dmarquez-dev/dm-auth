@@ -1,16 +1,8 @@
 # DM Auth
 
-## Branching policy for SIR sessions
+## Git and SIR sessions
 
-These rules are binding for every SIR session in this repository.
-
-1. Start from an up-to-date `main`: pull the latest `main` first, then create a fresh feature
-   branch from it and do all of the session's work on that feature branch.
-2. Commit and push the session's work on that feature branch. Never commit or push directly on
-   `main`.
-3. Open a pull request from that feature branch into `main`.
-4. Do not end the session until that pull request is merged (completed). Wait for the merge, so
-   `main` is current and the next SIR session starts from the latest changes.
+Every change reaches `main` through a pull request. Nothing is committed to `main` locally and `main` is never pushed. SIR sessions run in PR mode (`git.integration: "pr"` in `.sir/config.json`): the plugin names the branch, commits the session's records on it, pushes it, opens the PR, waits for it to merge and cleans up, all under the approval asked at Gate 3. A tend runs the same way on its own branch. Merge PRs with a merge commit, never a squash or rebase, because the `.sir/` records cite commit hashes.
 
 ## Conventions
 
