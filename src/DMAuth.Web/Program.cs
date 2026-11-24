@@ -19,15 +19,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Bootstrap Azure Key Vault configuration before any service registration reads from IConfiguration.
 // DefaultAzureCredential uses az login in dev and Managed Identity in production automatically.
-var vaultUri = builder.Configuration.GetConnectionString("KeyVault");
-if (string.IsNullOrEmpty(vaultUri))
+// KeyVault:Enabled is on unless a configuration source turns it off (the integration test host does).
+var keyVaultEnabled = builder.Configuration.GetValue("KeyVault:Enabled", true);
+if (keyVaultEnabled)
 {
-	throw new InvalidOperationException("Key Vault connection string cannot be empty.");
-}
+	var vaultUri = builder.Configuration.GetConnectionString("KeyVault");
+	if (string.IsNullOrEmpty(vaultUri))
+	{
+		throw new InvalidOperationException("Key Vault connection string cannot be empty.");
+	}
 
-builder.Configuration.AddAzureKeyVault(
-	new Uri(vaultUri),
-	new DefaultAzureCredential());
+	builder.Configuration.AddAzureKeyVault(
+		new Uri(vaultUri),
+		new DefaultAzureCredential());
+}
 
 // Configure Serilog
 builder.Host.UseSerilog((context, loggerConfig) =>
