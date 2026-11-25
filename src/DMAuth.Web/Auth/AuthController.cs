@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
 
 namespace DMAuth.Web.Auth;
@@ -175,7 +176,8 @@ public sealed class AuthController(
 		{
 			var command = new RotateTokenCommand(
 				request.ClientId,
-				request.RefreshToken ?? string.Empty);
+				request.RefreshToken ?? string.Empty,
+				request.ClientSecret);
 
 			var result = await Mediator.Send(command, cancellationToken);
 
@@ -192,7 +194,8 @@ public sealed class AuthController(
 			request.Code,
 			request.ClientId,
 			request.RedirectUri,
-			request.CodeVerifier);
+			request.CodeVerifier,
+			request.ClientSecret);
 
 		var codeResult = await Mediator.Send(codeCommand, cancellationToken);
 
@@ -292,12 +295,11 @@ public sealed class AuthController(
 		string code,
 		string state)
 	{
-		var query = QueryString.Create(
-		[
-			new KeyValuePair<string, StringValues>("code", code),
-			new KeyValuePair<string, StringValues>("state", state),
-		]);
-
-		return $"{redirectUri}{query}";
+		return QueryHelpers.AddQueryString(
+			redirectUri,
+			[
+				new KeyValuePair<string, string?>("code", code),
+				new KeyValuePair<string, string?>("state", state),
+			]);
 	}
 }

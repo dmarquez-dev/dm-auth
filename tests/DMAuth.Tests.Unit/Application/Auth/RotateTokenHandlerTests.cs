@@ -8,6 +8,7 @@ using DMAuth.Domain.Entities.Client;
 using DMAuth.Domain.Entities.RefreshToken;
 using DMAuth.Domain.Enums;
 using DMAuth.Domain.Interfaces;
+using DMAuth.Domain.ValueObjects;
 using DMAuth.Tests.Unit.Common;
 using FluentAssertions;
 using NSubstitute;
@@ -20,6 +21,7 @@ public class RotateTokenHandlerTests
 	private readonly IClientRepository _clientRepository = Substitute.For<IClientRepository>();
 	private readonly IRefreshTokenRepository _refreshTokenRepository = Substitute.For<IRefreshTokenRepository>();
 	private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
+	private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
 	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly RotateTokenHandler _handler;
 	private readonly Client _activeClient = CreateActiveClient();
@@ -36,6 +38,7 @@ public class RotateTokenHandlerTests
 			_clientRepository,
 			_refreshTokenRepository,
 			_tokenService,
+			_passwordHasher,
 			_unitOfWork);
 	}
 
@@ -189,16 +192,125 @@ public class RotateTokenHandlerTests
 		await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
 	}
 
+	[Fact]
+	public async Task Handle_WhenConfidentialClientSecretIsWrong_ReturnsInvalidClientWithoutLookingUpToken()
+	{
+		// Arrange
+		var client = SetupConfidentialClient();
+		SetupActiveRefreshToken(client.Id);
+
+		_passwordHasher.Verify(Arg.Any<string>(), Arg.Any<HashedPassword>())
+			.Returns(false);
+
+		var command = ValidCommand() with { ClientSecret = "wrong_secret" };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeFalse();
+		result.ErrorType.Should().Be(ResultError.Unauthorized);
+		result.Error.Should().Be("invalid_client");
+		await _refreshTokenRepository.DidNotReceive().FindByTokenHashAsync(
+			Arg.Any<string>(),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	public async Task Handle_WhenConfidentialClientSecretIsMissing_ReturnsInvalidClientWithoutLookingUpToken(
+		string? clientSecret)
+	{
+		// Arrange
+		var client = SetupConfidentialClient();
+		SetupActiveRefreshToken(client.Id);
+
+		_passwordHasher.Verify(Arg.Any<string>(), Arg.Any<HashedPassword>())
+			.Returns(true);
+
+		var command = ValidCommand() with { ClientSecret = clientSecret };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeFalse();
+		result.ErrorType.Should().Be(ResultError.Unauthorized);
+		result.Error.Should().Be("invalid_client");
+		await _refreshTokenRepository.DidNotReceive().FindByTokenHashAsync(
+			Arg.Any<string>(),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Fact]
+	public async Task Handle_WhenConfidentialClientSecretIsCorrect_ReturnsSuccess()
+	{
+		// Arrange
+		var client = SetupConfidentialClient();
+		SetupActiveRefreshToken(client.Id);
+
+		_passwordHasher.Verify(
+				ConfidentialSecret,
+				Arg.Is<HashedPassword>(hashedPassword =>
+					hashedPassword.Value == ConfidentialSecretHash))
+			.Returns(true);
+
+		var command = ValidCommand() with { ClientSecret = ConfidentialSecret };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task Handle_WhenPublicClientSendsNoSecret_ReturnsSuccessWithoutVerifyingSecret()
+	{
+		// Arrange
+		SetupActiveClient();
+		SetupActiveRefreshToken();
+
+		var command = ValidCommand() with { ClientSecret = null };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		_passwordHasher.DidNotReceive().Verify(
+			Arg.Any<string>(),
+			Arg.Any<HashedPassword>());
+	}
+
+	private Client SetupConfidentialClient()
+	{
+		var client = new Client(
+			"dmauth_test_client",
+			"Test Client",
+			ClientType.Confidential,
+			Guid.NewGuid(),
+			["https://example.com/callback"],
+			["openid", "profile", "offline_access"],
+			ConfidentialSecretHash);
+
+		_clientRepository.FindByClientIdAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(client);
+
+		return client;
+	}
+
 	private void SetupActiveClient()
 	{
 		_clientRepository.FindByClientIdAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(_activeClient);
 	}
 
-	private void SetupActiveRefreshToken()
+	private void SetupActiveRefreshToken(Guid? clientId = null)
 	{
 		_refreshTokenRepository.FindByTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(CreateActiveRefreshToken());
+			.Returns(CreateActiveRefreshToken(clientId));
 	}
 
 	private static Client CreateActiveClient() =>
@@ -224,10 +336,13 @@ public class RotateTokenHandlerTests
 	private static RotateTokenCommand ValidCommand() =>
 		new(
 			"dmauth_test_client",
-			PlainToken);
+			PlainToken,
+			null);
 
 	private static string HashValue(string value) =>
 		Base64Url.EncodeToString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
 	private const string PlainToken = "test_plain_refresh_token";
+	private const string ConfidentialSecret = "correct_client_secret";
+	private const string ConfidentialSecretHash = "$2a$12$exampleclientsecrethashvalue";
 }

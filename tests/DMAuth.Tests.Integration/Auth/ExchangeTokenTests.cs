@@ -221,6 +221,71 @@ public class ExchangeTokenTests(IntegrationTestFactory factory)
 		refreshToken.ValueKind.Should().BeOneOf(JsonValueKind.Null, JsonValueKind.Undefined);
 	}
 
+	[Fact]
+	public async Task ExchangeToken_WhenConfidentialClientSendsCorrectSecret_Returns200WithAccessToken()
+	{
+		// Arrange
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var httpClient = await factory.CreateAuthenticatedClientAsync(
+			$"etconfok-{suffix}@example.com",
+			$"etconfok-{suffix}",
+			cancellationToken: TestCancellationToken);
+
+		var (oauthClientId, clientSecret) = await RegisterConfidentialClientAsync(httpClient);
+		var code = await GrantConsentAndGetCodeAsync(httpClient, oauthClientId, ["openid"]);
+
+		// Act
+		var response = await ExchangeCodeRawAsync(
+			httpClient,
+			oauthClientId,
+			code,
+			clientSecret);
+
+		// Assert
+		response.StatusCode.Should().Be(HttpStatusCode.OK);
+		var json = await response.Content.ReadFromJsonAsync<JsonElement>(TestCancellationToken);
+		json.GetProperty("access_token").GetString().Should().NotBeNullOrEmpty();
+	}
+
+	[Fact]
+	public async Task ExchangeToken_WhenConfidentialClientOmitsSecret_Returns401Unauthorized()
+	{
+		// Arrange
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var httpClient = await factory.CreateAuthenticatedClientAsync(
+			$"etconfnosec-{suffix}@example.com",
+			$"etconfnosec-{suffix}",
+			cancellationToken: TestCancellationToken);
+
+		var (oauthClientId, _) = await RegisterConfidentialClientAsync(httpClient);
+		var code = await GrantConsentAndGetCodeAsync(httpClient, oauthClientId, ["openid"]);
+
+		// Act
+		var response = await ExchangeCodeRawAsync(httpClient, oauthClientId, code);
+
+		// Assert
+		response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+	}
+
+	private async Task<(string OAuthClientId, string ClientSecret)> RegisterConfidentialClientAsync(
+		HttpClient httpClient)
+	{
+		var response = await httpClient.PostAsJsonAsync(
+			"/api/clients",
+			new
+			{
+				clientName = "Confidential Test Client",
+				clientType = "Confidential",
+				redirectUris = new[] { TestRedirectUri },
+				allowedScopes = new[] { "openid" }
+			},
+			TestCancellationToken);
+
+		var body = await response.Content.ReadFromJsonAsync<RegisterClientResponse>(TestCancellationToken);
+
+		return (body!.OAuthClientId, body.ClientSecret!);
+	}
+
 	private async Task<(string OAuthClientId, string RedirectUri)> RegisterClientAsync(
 		HttpClient httpClient,
 		string[]? allowedScopes = null)
@@ -276,18 +341,27 @@ public class ExchangeTokenTests(IntegrationTestFactory factory)
 	private async Task<HttpResponseMessage> ExchangeCodeRawAsync(
 		HttpClient httpClient,
 		string oauthClientId,
-		string code)
+		string code,
+		string? clientSecret = null)
 	{
-		var formData = new FormUrlEncodedContent(
-		[
+		var formFields = new List<KeyValuePair<string, string>>
+		{
 			new("grant_type", "authorization_code"),
 			new("code", code),
 			new("client_id", oauthClientId),
 			new("redirect_uri", TestRedirectUri),
 			new("code_verifier", CodeVerifier),
-		]);
+		};
 
-		return await httpClient.PostAsync("/connect/token", formData, TestCancellationToken);
+		if (clientSecret is not null)
+		{
+			formFields.Add(new("client_secret", clientSecret));
+		}
+
+		return await httpClient.PostAsync(
+			"/connect/token",
+			new FormUrlEncodedContent(formFields),
+			TestCancellationToken);
 	}
 
 	private async Task<JsonElement> ExchangeCodeAsync(

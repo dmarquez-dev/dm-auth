@@ -135,10 +135,74 @@ public class GrantConsentTests(IntegrationTestFactory factory)
 		response.Headers.Location!.ToString().Should().Contain("state=");
 	}
 
-	private async Task<(string OAuthClientId, string RedirectUri)> RegisterClientAsync(HttpClient httpClient)
+	[Fact]
+	public async Task GrantConsent_WhenRedirectUriHasQuery_AppendsCodeToExistingQuery()
 	{
-		const string redirectUri = "https://example.com/callback";
+		// Arrange
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var httpClient = await factory.CreateAuthenticatedClientAsync(
+			$"grantquery-{suffix}@example.com",
+			$"grantquery-{suffix}",
+			cancellationToken: TestCancellationToken);
 
+		var (oauthClientId, redirectUri) = await RegisterClientAsync(
+			httpClient,
+			"https://example.com/callback?tenant=a");
+
+		var formData = CreateConsentForm(oauthClientId, redirectUri);
+
+		// Act
+		var response = await httpClient.PostAsync("/connect/consent", formData, TestCancellationToken);
+
+		// Assert
+		response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+		var location = response.Headers.Location!.OriginalString;
+		location.Should().StartWith("https://example.com/callback?tenant=a&code=");
+		location.Should().Contain("&state=state123");
+		location.Count(character => character == '?').Should().Be(1);
+	}
+
+	[Fact]
+	public async Task GrantConsent_WhenRedirectUriHasNoQuery_StartsQueryWithCode()
+	{
+		// Arrange
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var httpClient = await factory.CreateAuthenticatedClientAsync(
+			$"grantnoquery-{suffix}@example.com",
+			$"grantnoquery-{suffix}",
+			cancellationToken: TestCancellationToken);
+
+		var (oauthClientId, redirectUri) = await RegisterClientAsync(httpClient);
+
+		var formData = CreateConsentForm(oauthClientId, redirectUri);
+
+		// Act
+		var response = await httpClient.PostAsync("/connect/consent", formData, TestCancellationToken);
+
+		// Assert
+		response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+		var location = response.Headers.Location!.OriginalString;
+		location.Should().StartWith("https://example.com/callback?code=");
+		location.Should().Contain("&state=state123");
+	}
+
+	private static FormUrlEncodedContent CreateConsentForm(
+		string oauthClientId,
+		string redirectUri) =>
+		new(
+		[
+			new KeyValuePair<string, string>("client_id", oauthClientId),
+			new KeyValuePair<string, string>("scope", "openid"),
+			new KeyValuePair<string, string>("redirect_uri", redirectUri),
+			new KeyValuePair<string, string>("state", "state123"),
+			new KeyValuePair<string, string>("code_challenge", new string('A', 43)),
+			new KeyValuePair<string, string>("code_challenge_method", "S256"),
+		]);
+
+	private async Task<(string OAuthClientId, string RedirectUri)> RegisterClientAsync(
+		HttpClient httpClient,
+		string redirectUri = "https://example.com/callback")
+	{
 		var response = await httpClient.PostAsJsonAsync(
 			"/api/clients",
 			new
