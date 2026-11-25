@@ -4,8 +4,11 @@ using System.Text;
 using DMAuth.Application.Common.Interfaces;
 using DMAuth.Application.Common.Results;
 using DMAuth.Application.Features.Auth.ExchangeToken;
+using DMAuth.Domain.Entities.Client;
 using DMAuth.Domain.Entities.RefreshToken;
+using DMAuth.Domain.Enums;
 using DMAuth.Domain.Interfaces;
+using DMAuth.Domain.ValueObjects;
 using MediatR;
 
 namespace DMAuth.Application.Features.Auth.RotateToken;
@@ -18,6 +21,7 @@ public sealed class RotateTokenHandler(
 	IClientRepository clientRepository,
 	IRefreshTokenRepository refreshTokenRepository,
 	ITokenService tokenService,
+	IPasswordHasher passwordHasher,
 	IUnitOfWork unitOfWork)
 		: IRequestHandler<RotateTokenCommand, TypedResult<ExchangeTokenResponse>>
 {
@@ -40,6 +44,11 @@ public sealed class RotateTokenHandler(
 		{
 			return TypedResult<ExchangeTokenResponse>.Forbidden(
 				"This client is inactive and cannot participate in token exchange.");
+		}
+
+		if (!IsClientAuthenticated(client, request.ClientSecret))
+		{
+			return TypedResult<ExchangeTokenResponse>.Unauthorized("invalid_client");
 		}
 
 		var tokenHash = Base64Url.EncodeToString(
@@ -104,5 +113,25 @@ public sealed class RotateTokenHandler(
 				"Bearer",
 				tokenService.AccessTokenExpirySeconds,
 				token.Scopes));
+	}
+
+	private bool IsClientAuthenticated(
+		Client client,
+		string? clientSecret)
+	{
+		if (client.ClientType is not ClientType.Confidential)
+		{
+			return true;
+		}
+
+		if (string.IsNullOrEmpty(clientSecret)
+			|| string.IsNullOrWhiteSpace(client.ClientSecretHash))
+		{
+			return false;
+		}
+
+		return passwordHasher.Verify(
+			clientSecret,
+			new HashedPassword(client.ClientSecretHash));
 	}
 }

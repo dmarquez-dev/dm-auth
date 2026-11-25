@@ -22,10 +22,15 @@ namespace DMAuth.Application.Features.Auth.ExchangeToken;
 /// <param name="CodeVerifier">
 ///		The PKCE code verifier that proves ownership of the original code challenge.
 /// </param>
+/// <param name="ClientSecret">
+///		The plain client secret sent in the <c>client_secret</c> form field (client_secret_post).
+///		Required for confidential clients and ignored for public clients.
+/// </param>
 public record ExchangeTokenCommand(
 	string GrantType,
 	string Code,
 	string ClientId,
 	string RedirectUri,
-	string CodeVerifier)
+	string CodeVerifier,
+	string? ClientSecret)
 		: IRequest<TypedResult<ExchangeTokenResponse>>;

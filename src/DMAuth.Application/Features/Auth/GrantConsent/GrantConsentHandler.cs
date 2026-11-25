@@ -13,8 +13,9 @@ using MediatR;
 namespace DMAuth.Application.Features.Auth.GrantConsent;
 
 /// <summary>
-///		Handles consent grant by recording or updating the user's consent, generating a
-///		cryptographically random authorization code, and persisting its hash for later exchange.
+///		Handles consent grant by verifying the redirect URI and granted scopes against the client,
+///		recording or updating the user's consent, generating a cryptographically random
+///		authorization code, and persisting its hash for later exchange.
 /// </summary>
 public sealed class GrantConsentHandler(
 	IClientRepository clientRepository,
@@ -42,6 +43,23 @@ public sealed class GrantConsentHandler(
 		{
 			return TypedResult<GrantConsentResponse>.Forbidden(
 				"This client is inactive and cannot initiate authorization flows.");
+		}
+
+		if (!client.RedirectUris.Contains(request.RedirectUri))
+		{
+			return TypedResult<GrantConsentResponse>.Invalid(
+				$"redirect_uri '{request.RedirectUri}' is not registered for this client.");
+		}
+
+		var unrecognizedScopes = request.GrantedScopes
+			.Where(grantedScope =>
+				!client.AllowedScopes.Contains(grantedScope))
+			.ToList();
+
+		if (unrecognizedScopes.Count > 0)
+		{
+			return TypedResult<GrantConsentResponse>.Invalid(
+				$"The following scopes are not permitted for this client: {string.Join(", ", unrecognizedScopes)}.");
 		}
 
 		var scopeString = string.Join(" ", request.GrantedScopes);

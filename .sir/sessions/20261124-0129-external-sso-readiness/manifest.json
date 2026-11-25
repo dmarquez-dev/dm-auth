@@ -1,0 +1,154 @@
+{
+  "session": "20261124-0129-external-sso-readiness",
+  "createdAt": "2026-11-24T02:28:30Z",
+  "track": "standard",
+  "baseBranch": "main",
+  "contracts": [],
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "IW-001: restore and build the solution without NU1605",
+      "agent": "sir-backend-engineer",
+      "domain": "backend",
+      "owns": [
+        "src/DMAuth.Infrastructure/DMAuth.Infrastructure.csproj"
+      ],
+      "dependsOn": [],
+      "acceptance": [
+        "Red step: before editing, run `dotnet build src/DM-Auth.sln` from the worktree root and report the NU1605 error it prints (downgrade of Microsoft.Extensions.DependencyInjection.Abstractions, `1 Error(s)`), as the session setup probe recorded at ba33897.",
+        "`dotnet restore src/DM-Auth.sln`, run from the worktree root, exits 0 and its output contains no `NU1605`.",
+        "`dotnet build src/DM-Auth.sln`, run from the worktree root, exits 0, its output contains `0 Error(s)`, and it contains no `NU1605`.",
+        "No package reference in src/DMAuth.Infrastructure/DMAuth.Infrastructure.csproj floats: `grep -c 'Version=\"[^\"]*\\*' src/DMAuth.Infrastructure/DMAuth.Infrastructure.csproj` prints 0 (it prints 3 at ba33897). Control that must not change: the same grep over src/DMAuth.Web/DMAuth.Web.csproj prints 2, which this task does not touch and which shows the predicate matches a `10.*` version and not an exact one such as `10.0.15`.",
+        "The three formerly floating packages are still referenced, each with an exact version: `grep -c -E 'Include=\"Microsoft\\.(AspNetCore\\.DataProtection\\.EntityFrameworkCore|EntityFrameworkCore\\.SqlServer|EntityFrameworkCore\\.Tools)\"' src/DMAuth.Infrastructure/DMAuth.Infrastructure.csproj` prints 3."
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "NT-001: both test projects run their tests under dotnet test (VSTest), without Azure credentials",
+      "agent": "sir-backend-engineer",
+      "domain": "backend",
+      "owns": [
+        "tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj",
+        "tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj",
+        "tests/DMAuth.Tests.Integration/Common/IntegrationTestFactory.cs",
+        "tests/DMAuth.Tests.Integration/Common/ProgramTests.cs",
+        "src/DMAuth.Web/Program.cs",
+        "src/DMAuth.Web/appsettings.json"
+      ],
+      "dependsOn": ["T1"],
+      "acceptance": [
+        "Red step (runner): before editing, `dotnet test tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj` run from the worktree root prints no line containing `Total:`; report the output observed.",
+        "Both test projects use the VSTest runner, per discussion D6: `grep -l 'Include=\"Microsoft.NET.Test.Sdk\"' tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj` and `grep -l 'Include=\"xunit.runner.visualstudio\"' tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj` each list both files.",
+        "The repository is not switched to Microsoft.Testing.Platform mode, per discussion D6 (one runner for both): `ls global.json` run from the worktree root reports that no such file exists.",
+        "`dotnet test tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj`, run from the worktree root, exits 0 and prints exactly one summary line, which reports `Failed:     0` and `Total:   234`. Census: 234 is the VSTest total the architect measured on a copy of the worktree at ba33897 with only T1's and this task's package changes applied, and equals the second count 193 `[Fact]` + 41 `[InlineData(` lines in tests/DMAuth.Tests.Unit (`grep -rhoE '^\\s*\\[Fact(\\(|\\])' tests/DMAuth.Tests.Unit --include=*.cs | wc -l` and `grep -rhoE '^\\s*\\[InlineData\\(' tests/DMAuth.Tests.Unit --include=*.cs | wc -l`); this task adds no unit test.",
+        "Observation (Key Vault, before the switch): with the runner packages in place and Program.cs and IntegrationTestFactory.cs not yet changed, run `dotnet test tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj` and report the summary line observed. Where tests fail, report that their errors come from `DefaultAzureCredential` / `CredentialUnavailableException` (the architect observed `Failed:   107, Passed:     0` on a scratch copy with an expired Azure CLI token); where they pass because this machine holds a valid Azure CLI login reaching the dev vault, report that instead. The switch's discrimination is demonstrated by the ProgramTests injection criterion and the UseSetting criterion, not by this observation.",
+        "The test factory turns Key Vault off through the host setting Program.cs reads, `KeyVault:Enabled` (Gate 2 D1): `grep -nE 'UseSetting\\(\\s*\"KeyVault:Enabled\"' tests/DMAuth.Tests.Integration/Common/IntegrationTestFactory.cs` prints at least one line (it prints nothing at ba33897), and `grep -n 'KeyVault:Enabled' src/DMAuth.Web/Program.cs` prints at least one line (nothing at ba33897).",
+        "`dotnet test tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj`, run from the worktree root, exits 0 and prints exactly one summary line, which reports `Failed:     0` and a `Total:` equal to 107 plus the number of test cases this task adds; report both numbers. Census for 107: the architect's scratch VSTest total at ba33897 plus runner and Key Vault changes, equal to 93 `[Fact]` + 14 `[InlineData(` lines in tests/DMAuth.Tests.Integration counted with the two greps in the unit criterion pointed at that folder.",
+        "Program.cs keeps Key Vault on unless a declared setting turns it off (backend.md, Configuration: behaviour differing by environment is a declared configuration value, never a branch on an environment name): `grep -nE 'IsEnvironment|IsDevelopment|EnvironmentName' src/DMAuth.Web/Program.cs` prints only the line it prints at ba33897 (`if (app.Environment.IsDevelopment())`, Program.cs:174 at ba33897), and the setting's default when absent is enabled.",
+        "src/DMAuth.Web/appsettings.json declares the Key Vault switch with its enabled default: `node -e \"const j=JSON.parse(require('fs').readFileSync('src/DMAuth.Web/appsettings.json','utf8').replace(/^\\uFEFF/,''));process.exit(j.KeyVault&&j.KeyVault.Enabled===true&&j.ConnectionStrings.KeyVault===''?0:1)\"` run from the worktree root exits 0.",
+        "Preserved, newly tested: a test in tests/DMAuth.Tests.Integration/Common/ProgramTests.cs builds the host (WebApplicationFactory<Program>, not IntegrationTestFactory) with `ConnectionStrings:KeyVault` set to an empty string and the Key Vault switch left unset, and asserts that startup throws InvalidOperationException whose message contains `Key Vault connection string cannot be empty.`; `dotnet test tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj --filter \"FullyQualifiedName~ProgramTests\"` reports `Failed:     0` and a Total of at least 1.",
+        "Demonstrated discrimination for the code default (amended A1, E3): ProgramTests.cs also holds Startup_WithNoAppSettingsFiles_ThrowsInvalidOperationException, which builds WebApplicationFactory<Program> on an empty content root so no appsettings file supplies the switch; inject a default of disabled into Program.cs's read of the Key Vault switch (name file:line), run only the --filter command above and report that this test fails, then revert and report the read-back of that line before running anything else.",
+        "The test factory disables Key Vault through the setting Program.cs actually reads, and no stale key remains: `grep -rn 'KeyVault:VaultUri' src tests --include=*.cs` prints nothing (it prints IntegrationTestFactory.cs:53 at ba33897). Control: `grep -rn 'GetConnectionString(\"KeyVault\")' src --include=*.cs` still prints exactly one line, in src/DMAuth.Web/Program.cs.",
+        "Every test method this task adds is named MethodName_Scenario_ExpectedResult and its body is laid out with `// Arrange`, `// Act`, `// Assert` comment lines in that order (dotnet-tests.md, Naming and Structure)."
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "DA-001 + IW-004: verify confidential client secrets at the token endpoint (client_secret_post) and keep the redirect URI's query in the code redirect",
+      "agent": "sir-backend-engineer",
+      "domain": "backend",
+      "owns": [
+        "src/DMAuth.Application/Features/Auth/ExchangeToken/ExchangeTokenCommand.cs",
+        "src/DMAuth.Application/Features/Auth/ExchangeToken/ExchangeTokenHandler.cs",
+        "src/DMAuth.Application/Features/Auth/ExchangeToken/ExchangeTokenValidator.cs",
+        "src/DMAuth.Application/Features/Auth/RotateToken/RotateTokenCommand.cs",
+        "src/DMAuth.Application/Features/Auth/RotateToken/RotateTokenHandler.cs",
+        "src/DMAuth.Application/Features/Auth/RotateToken/RotateTokenValidator.cs",
+        "src/DMAuth.Web/Auth/AuthController.cs",
+        "src/DMAuth.Web/Auth/Requests/ExchangeTokenRequest.cs",
+        "tests/DMAuth.Tests.Unit/Application/Auth/ExchangeTokenHandlerTests.cs",
+        "tests/DMAuth.Tests.Unit/Application/Auth/RotateTokenHandlerTests.cs",
+        "tests/DMAuth.Tests.Integration/Auth/ExchangeTokenTests.cs",
+        "tests/DMAuth.Tests.Integration/Auth/RotateTokenTests.cs",
+        "tests/DMAuth.Tests.Integration/Auth/GrantConsentTests.cs"
+      ],
+      "dependsOn": ["T2"],
+      "acceptance": [
+        "Red-step protocol for every DA-001 handler test below marked `red`: add the client secret to the command first, write the test, run `dotnet test tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj --filter \"FullyQualifiedName~ExchangeTokenHandlerTests|FullyQualifiedName~RotateTokenHandlerTests\"` and report the assertion failure (not a compile error) for each `red` test before the handler check exists; then implement and report the same command with `Failed:     0`.",
+        "red: ExchangeTokenHandler, confidential client (ClientType.Confidential), wrong client secret: the result has IsSuccess false, ErrorType ResultError.Unauthorized and Error equal to `invalid_client`, and IAuthorizationCodeRepository.FindByCodeHashAsync is not received (DidNotReceive).",
+        "red: ExchangeTokenHandler, confidential client, no client secret supplied (null or empty): ResultError.Unauthorized with Error `invalid_client`, and FindByCodeHashAsync is not received.",
+        "red: ExchangeTokenHandler, confidential client whose ClientSecretHash is null: ResultError.Unauthorized with Error `invalid_client`, and the handler throws no exception (dotnet.md, Error handling: never throw for wrong credentials).",
+        "Preserved, newly tested: ExchangeTokenHandler, confidential client, correct client secret (IPasswordHasher.Verify returns true for it against the client's ClientSecretHash): the result is a success.",
+        "Preserved, newly tested (discussion D5): ExchangeTokenHandler, public client (ClientType.Public), no client secret: the result is a success and IPasswordHasher.Verify is not received.",
+        "red: RotateTokenHandler, confidential client, wrong client secret: ResultError.Unauthorized with Error `invalid_client`, and IRefreshTokenRepository.FindByTokenHashAsync is not received.",
+        "red: RotateTokenHandler, confidential client, no client secret supplied: ResultError.Unauthorized with Error `invalid_client`, and FindByTokenHashAsync is not received.",
+        "Preserved, newly tested: RotateTokenHandler, confidential client, correct client secret: the result is a success.",
+        "Preserved, newly tested (discussion D5): RotateTokenHandler, public client, no client secret: the result is a success and IPasswordHasher.Verify is not received.",
+        "The secret is verified against the stored hash in Application (backlog DA-001 Verify): `grep -rn \"ClientSecretHash\" src/DMAuth.Application --include=*.cs` prints at least one line (it prints none at ba33897).",
+        "Preserved, newly tested (client_secret_post, discussion D4): an integration test registers a Confidential client through POST /api/clients, obtains an authorization code through the consent flow, and POSTs /connect/token with grant_type=authorization_code and form field `client_secret` set to the secret returned at registration; the response is 200 and carries an access_token.",
+        "red: the same integration flow with no `client_secret` form field returns 401; report the 200 observed before the fix.",
+        "red: an integration test redeems a refresh token for a Confidential client (grant_type=refresh_token) with a wrong `client_secret` form field and gets 401; report the status observed before the fix.",
+        "No log call in Application or Web passes the client secret (backend.md, Logging: never log a secret or a credential): `grep -rnE 'Log[A-Za-z]*\\(.*[Ss]ecret' src/DMAuth.Application src/DMAuth.Web --include=*.cs` prints nothing. Preserved by design: it prints nothing at ba33897.",
+        "red (IW-004): an integration test in tests/DMAuth.Tests.Integration/Auth/GrantConsentTests.cs registers a client whose only redirect URI is `https://example.com/callback?tenant=a`, POSTs /connect/consent with that redirect_uri and state `state123`, and asserts that the 302 Location starts with `https://example.com/callback?tenant=a&code=`, contains `&state=state123`, and contains exactly one `?`; report the Location observed before the fix (`...?tenant=a?code=...`).",
+        "Preserved, newly tested (IW-004): for the query-less redirect URI `https://example.com/callback`, the 302 Location from POST /connect/consent starts with `https://example.com/callback?code=` and contains `&state=state123`.",
+        "`dotnet test tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj` reports `Failed:     0` and a Total greater than 234; report the Total.",
+        "`dotnet test tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj` reports `Failed:     0` and a Total greater than the Total T2 reported; report the Total.",
+        "Every test method this task adds is named MethodName_Scenario_ExpectedResult (dotnet-tests.md, Naming).",
+        "Every test method this task adds lays out its body with `// Arrange`, `// Act`, `// Assert` comment lines in that order and asserts only with FluentAssertions, verifying substitute calls with NSubstitute `Received`/`DidNotReceive` (amended A4, E6; dotnet-tests.md, Structure, Assertions and Substitutes).",
+        "Every public member this task adds (the client secret on ExchangeTokenCommand, RotateTokenCommand and ExchangeTokenRequest) carries an XML documentation comment whose description sits on its own line indented two tabs after `///` (csharp-style.md, XML documentation comments)."
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "DA-002: GrantConsent rejects an unregistered redirect URI or a disallowed scope; whole-solution gate",
+      "agent": "sir-backend-engineer",
+      "domain": "backend",
+      "owns": [
+        "src/DMAuth.Application/Features/Auth/GrantConsent/GrantConsentHandler.cs",
+        "tests/DMAuth.Tests.Unit/Application/Auth/GrantConsentHandlerTests.cs"
+      ],
+      "dependsOn": ["T3"],
+      "acceptance": [
+        "red (backlog DA-002 Verify): a GrantConsentHandlerTests test sends a command whose RedirectUri is not in the client's RedirectUris and asserts IsSuccess false, ErrorType ResultError.Invalid, and that IAuthorizationCodeRepository.Add is not received; report the failure observed with `dotnet test tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj --filter \"FullyQualifiedName~GrantConsentHandlerTests\"` before the fix.",
+        "red: a test with a RedirectUri that extends a registered one (registered `https://example.com/callback`, sent `https://example.com/callback/extra`) gets ResultError.Invalid and no IAuthorizationCodeRepository.Add, showing the match is exact.",
+        "red: a test whose GrantedScopes includes a scope not in the client's AllowedScopes gets ResultError.Invalid and no IAuthorizationCodeRepository.Add.",
+        "red: for the unregistered-redirect-URI command, IConsentRepository receives neither Add nor Update.",
+        "Preserved: the GrantConsentHandlerTests tests that exist at ba33897 (for example Handle_WithValidRequest_ReturnsSuccessWithPlainCode) still pass: the --filter command above reports `Failed:     0`.",
+        "Every test method this task adds is named MethodName_Scenario_ExpectedResult and lays out its body with `// Arrange`, `// Act`, `// Assert` comment lines (dotnet-tests.md, Naming and Structure).",
+        "Whole-solution gate: `dotnet build src/DM-Auth.sln`, run from the worktree root, exits 0, prints `0 Error(s)`, and its output contains no `NU1605`.",
+        "Whole-solution gate (dotnet.md, Solution and layers: `dotnet test src/DM-Auth.sln` from the repository root): `dotnet test src/DM-Auth.sln` exits 0 and prints two summary lines, DMAuth.Tests.Unit.dll and DMAuth.Tests.Integration.dll, each with `Failed:     0`; report both Totals."
+      ]
+    },
+    {
+      "id": "T5",
+      "title": "FE-003 + FE-004: consent form posts to the API base URL; login classifies returnUrl",
+      "agent": "sir-frontend-engineer",
+      "domain": "frontend",
+      "owns": [
+        "src/DMAuth.Client/src/pages/ConsentPage.tsx",
+        "src/DMAuth.Client/src/pages/ConsentPage.test.tsx",
+        "src/DMAuth.Client/src/pages/LoginPage.tsx",
+        "src/DMAuth.Client/src/pages/LoginPage.test.tsx",
+        "src/DMAuth.Client/src/api/client.ts",
+        "src/DMAuth.Client/src/api/client.test.ts"
+      ],
+      "dependsOn": ["T2"],
+      "acceptance": [
+        "Per Gate 2 D2 (amended A2, E4: plain `npm ci` fails EUSAGE on optional @emnapi peers under npm 11.6.2), the orchestrator runs `npm ci --legacy-peer-deps --prefix src/DMAuth.Client` in the worktree before this task is dispatched, and every npm criterion below runs against that install; `package.json` and `package-lock.json` are not changed by this task (`git diff --name-only -- src/DMAuth.Client/package.json src/DMAuth.Client/package-lock.json` prints nothing).",
+        "red (FE-003): a ConsentPage test stubs `VITE_API_BASE_URL` to `https://api.example.test/` and asserts the approve form's action is `https://api.example.test/connect/consent`; `npm --prefix src/DMAuth.Client run test -- src/pages/ConsentPage.test.tsx` reports the failure before the fix (action `/connect/consent`) and passes after.",
+        "Preserved, newly tested (FE-003, dev proxy): with `VITE_API_BASE_URL` unset, the approve form's action is `/connect/consent`.",
+        "FE-003 backlog Verify: `grep -n 'action=' src/DMAuth.Client/src/pages/ConsentPage.tsx` shows an action that is a JSX expression (`action={`), and `grep -c 'action=\"/connect/consent\"' src/DMAuth.Client/src/pages/ConsentPage.tsx` prints 0 (it prints 1 at ba33897, ConsentPage.tsx:121).",
+        "The API base URL is read from the environment in one place (frontend.md, State ownership: every piece of state has exactly one owner): `grep -rl VITE_API_BASE_URL src/DMAuth.Client/src --include=*.ts --include=*.tsx --exclude=*.test.ts --exclude=*.test.tsx` lists exactly one file. Preserved by design: it lists only src/api/client.ts at ba33897.",
+        "Preserved, newly tested (FE-004): with returnUrl `/clients`, a successful sign-in lands on `/clients` through the router.",
+        "red (FE-004): with `VITE_API_BASE_URL` stubbed to `https://api.example.test/` and returnUrl `https://api.example.test/connect/authorize?client_id=dmauth_x&state=s1`, a successful sign-in calls `window.location.assign` with exactly that URL; report the failure observed before the fix with `npm --prefix src/DMAuth.Client run test -- src/pages/LoginPage.test.tsx`.",
+        "red (FE-004 backlog Verify): with returnUrl `//example.org`, a successful sign-in lands on `/dashboard` and `window.location.assign` is not called.",
+        "red: with `VITE_API_BASE_URL` stubbed to `https://api.example.test/` and returnUrl `https://evil.example/connect/authorize?client_id=dmauth_x`, a successful sign-in lands on `/dashboard` and `window.location.assign` is not called.",
+        "red: with `VITE_API_BASE_URL` stubbed to `https://api.example.test/` and returnUrl `https://api.example.test/api/users/me` (API origin, not the authorize path), a successful sign-in lands on `/dashboard` and `window.location.assign` is not called.",
+        "New and changed tests render through renderWithProviders, drive input with userEvent, and never query the DOM by selector (client-tests.md, Rendering, Interactions and Querying): `grep -nE 'querySelector|fireEvent' src/DMAuth.Client/src/pages/ConsentPage.test.tsx src/DMAuth.Client/src/pages/LoginPage.test.tsx` prints nothing. Preserved by design: it prints nothing at ba33897.",
+        "`npm --prefix src/DMAuth.Client run test` exits 0.",
+        "Lint (amended A3, E5: lint fails at ba33897 with 6 errors, 4 of them in files T5 does not own): eslint run from src/DMAuth.Client over T5's six owned files (`npx eslint src/pages/ConsentPage.tsx src/pages/ConsentPage.test.tsx src/pages/LoginPage.tsx src/pages/LoginPage.test.tsx src/api/client.ts src/api/client.test.ts`) exits 0, which clears the 2 `no-explicit-any` errors in src/api/client.test.ts at ba33897; and `npm --prefix src/DMAuth.Client run lint` reports exactly 4 errors, all in tests/e2e/auth.spec.ts, tests/e2e/fixtures/auth.ts and tests/e2e/profile.spec.ts, as at ba33897.",
+        "`npm --prefix src/DMAuth.Client run build` exits 0."
+      ]
+    }
+  ]
+}

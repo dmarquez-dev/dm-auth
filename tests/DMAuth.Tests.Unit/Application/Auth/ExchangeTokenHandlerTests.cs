@@ -25,6 +25,7 @@ public class ExchangeTokenHandlerTests
 	private readonly IRefreshTokenRepository _refreshTokenRepository = Substitute.For<IRefreshTokenRepository>();
 	private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
 	private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
+	private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
 	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly ExchangeTokenHandler _handler;
 	private readonly Client _activeClient = CreateActiveClient();
@@ -43,6 +44,7 @@ public class ExchangeTokenHandlerTests
 			_refreshTokenRepository,
 			_userRepository,
 			_tokenService,
+			_passwordHasher,
 			_unitOfWork);
 	}
 
@@ -283,15 +285,151 @@ public class ExchangeTokenHandlerTests
 		await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
 	}
 
+	[Fact]
+	public async Task Handle_WhenConfidentialClientSecretIsWrong_ReturnsInvalidClientWithoutLookingUpCode()
+	{
+		// Arrange
+		var client = SetupConfidentialClient(ConfidentialSecretHash);
+		SetupValidAuthCode(clientId: client.Id);
+
+		_passwordHasher.Verify(Arg.Any<string>(), Arg.Any<HashedPassword>())
+			.Returns(false);
+
+		var command = ValidCommand() with { ClientSecret = "wrong_secret" };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeFalse();
+		result.ErrorType.Should().Be(ResultError.Unauthorized);
+		result.Error.Should().Be("invalid_client");
+		await _authCodeRepository.DidNotReceive().FindByCodeHashAsync(
+			Arg.Any<string>(),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	public async Task Handle_WhenConfidentialClientSecretIsMissing_ReturnsInvalidClientWithoutLookingUpCode(
+		string? clientSecret)
+	{
+		// Arrange
+		var client = SetupConfidentialClient(ConfidentialSecretHash);
+		SetupValidAuthCode(clientId: client.Id);
+
+		_passwordHasher.Verify(Arg.Any<string>(), Arg.Any<HashedPassword>())
+			.Returns(true);
+
+		var command = ValidCommand() with { ClientSecret = clientSecret };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeFalse();
+		result.ErrorType.Should().Be(ResultError.Unauthorized);
+		result.Error.Should().Be("invalid_client");
+		await _authCodeRepository.DidNotReceive().FindByCodeHashAsync(
+			Arg.Any<string>(),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Fact]
+	public async Task Handle_WhenConfidentialClientHasNoSecretHash_ReturnsInvalidClientWithoutThrowing()
+	{
+		// Arrange
+		var client = SetupConfidentialClient(clientSecretHash: null);
+		SetupValidAuthCode(clientId: client.Id);
+
+		_passwordHasher.Verify(Arg.Any<string>(), Arg.Any<HashedPassword>())
+			.Returns(true);
+
+		var command = ValidCommand() with { ClientSecret = ConfidentialSecret };
+
+		// Act
+		var act = () =>
+			_handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		var result = (await act.Should().NotThrowAsync()).Subject;
+		result.IsSuccess.Should().BeFalse();
+		result.ErrorType.Should().Be(ResultError.Unauthorized);
+		result.Error.Should().Be("invalid_client");
+	}
+
+	[Fact]
+	public async Task Handle_WhenConfidentialClientSecretIsCorrect_ReturnsSuccess()
+	{
+		// Arrange
+		var client = SetupConfidentialClient(ConfidentialSecretHash);
+		SetupValidAuthCode(clientId: client.Id);
+
+		_passwordHasher.Verify(
+				ConfidentialSecret,
+				Arg.Is<HashedPassword>(hashedPassword =>
+					hashedPassword.Value == ConfidentialSecretHash))
+			.Returns(true);
+
+		var command = ValidCommand() with { ClientSecret = ConfidentialSecret };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task Handle_WhenPublicClientSendsNoSecret_ReturnsSuccessWithoutVerifyingSecret()
+	{
+		// Arrange
+		SetupActiveClient();
+		SetupValidAuthCode();
+
+		var command = ValidCommand() with { ClientSecret = null };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		_passwordHasher.DidNotReceive().Verify(
+			Arg.Any<string>(),
+			Arg.Any<HashedPassword>());
+	}
+
+	private Client SetupConfidentialClient(string? clientSecretHash)
+	{
+		var client = new Client(
+			"dmauth_test_client",
+			"Test Client",
+			ClientType.Confidential,
+			Guid.NewGuid(),
+			["https://example.com/callback"],
+			["openid", "profile", "email", "offline_access"],
+			clientSecretHash);
+
+		_clientRepository.FindByClientIdAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(client);
+
+		return client;
+	}
+
 	private void SetupActiveClient()
 	{
 		_clientRepository.FindByClientIdAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(_activeClient);
 	}
 
-	private void SetupValidAuthCode(string scopes = "profile")
+	private void SetupValidAuthCode(
+		string scopes = "profile",
+		Guid? clientId = null)
 	{
-		var authCode = CreateAuthCode(scopes: scopes);
+		var authCode = CreateAuthCode(
+			clientId: clientId,
+			scopes: scopes);
 
 		_authCodeRepository.FindByCodeHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(authCode);
@@ -340,11 +478,14 @@ public class ExchangeTokenHandlerTests
 			PlainCode,
 			"dmauth_test_client",
 			"https://example.com/callback",
-			CodeVerifier);
+			CodeVerifier,
+			null);
 
 	private static string HashValue(string value) =>
 		Base64Url.EncodeToString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
 	private const string PlainCode = "test_plain_code";
+	private const string ConfidentialSecret = "correct_client_secret";
+	private const string ConfidentialSecretHash = "$2a$12$exampleclientsecrethashvalue";
 	private static readonly string CodeVerifier = new('v', 43);
 }

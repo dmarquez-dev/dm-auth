@@ -46,4 +46,11 @@ public record ExchangeTokenRequest
 	/// </summary>
 	[FromForm(Name = "refresh_token")]
 	public string? RefreshToken { get; init; }
+
+	/// <summary>
+	///		The plain client secret, sent as a form field (client_secret_post).
+	///		Required for confidential clients on both grant types and ignored for public clients.
+	/// </summary>
+	[FromForm(Name = "client_secret")]
+	public string? ClientSecret { get; init; }
 }

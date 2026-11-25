@@ -1,10 +1,13 @@
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
+
 import { authApi } from '../api/authApi'
+import { isApiAuthorizeUrl } from '../api/client'
 
 const schema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
@@ -13,11 +16,17 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+const DEFAULT_RETURN_URL = '/dashboard'
+
+// App-relative: a single leading slash. `//host` and `/\host` are protocol-relative to a browser.
+const isAppRelativePath = (url: string) =>
+  url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\')
+
 export function LoginPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const returnUrl = searchParams.get('returnUrl') ?? '/dashboard'
+  const returnUrl = searchParams.get('returnUrl') ?? DEFAULT_RETURN_URL
 
   const {
     register,
@@ -30,7 +39,12 @@ export function LoginPage() {
     try {
       await authApi.login(values)
       await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
-      navigate(returnUrl, { replace: true })
+      if (isApiAuthorizeUrl(returnUrl)) {
+        // Resume an OAuth authorization on the API; the router cannot reach it.
+        window.location.assign(returnUrl)
+      } else {
+        navigate(isAppRelativePath(returnUrl) ? returnUrl : DEFAULT_RETURN_URL, { replace: true })
+      }
     } catch (error) {
       const message =
         isAxiosError(error) && error.response?.status === 401

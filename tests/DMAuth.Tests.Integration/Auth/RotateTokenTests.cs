@@ -151,6 +151,85 @@ public class RotateTokenTests(IntegrationTestFactory factory)
 		response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 	}
 
+	[Fact]
+	public async Task RotateToken_WhenConfidentialClientSendsWrongSecret_Returns401Unauthorized()
+	{
+		// Arrange
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var httpClient = await factory.CreateAuthenticatedClientAsync(
+			$"rotconfbad-{suffix}@example.com",
+			$"rotconfbad-{suffix}",
+			cancellationToken: TestCancellationToken);
+
+		var (oauthClientId, clientSecret) = await RegisterConfidentialClientAsync(httpClient);
+		var code = await GrantConsentAndGetCodeAsync(httpClient, oauthClientId);
+		var exchangeJson = await ExchangeCodeAsync(
+			httpClient,
+			oauthClientId,
+			code,
+			clientSecret);
+		var refreshToken = exchangeJson.GetProperty("refresh_token").GetString()!;
+
+		// Act
+		var response = await RotateTokenRawAsync(
+			httpClient,
+			oauthClientId,
+			refreshToken,
+			"wrong_client_secret");
+
+		// Assert
+		response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+	}
+
+	[Fact]
+	public async Task RotateToken_WhenConfidentialClientSendsCorrectSecret_Returns200Ok()
+	{
+		// Arrange
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var httpClient = await factory.CreateAuthenticatedClientAsync(
+			$"rotconfok-{suffix}@example.com",
+			$"rotconfok-{suffix}",
+			cancellationToken: TestCancellationToken);
+
+		var (oauthClientId, clientSecret) = await RegisterConfidentialClientAsync(httpClient);
+		var code = await GrantConsentAndGetCodeAsync(httpClient, oauthClientId);
+		var exchangeJson = await ExchangeCodeAsync(
+			httpClient,
+			oauthClientId,
+			code,
+			clientSecret);
+		var refreshToken = exchangeJson.GetProperty("refresh_token").GetString()!;
+
+		// Act
+		var response = await RotateTokenRawAsync(
+			httpClient,
+			oauthClientId,
+			refreshToken,
+			clientSecret);
+
+		// Assert
+		response.StatusCode.Should().Be(HttpStatusCode.OK);
+	}
+
+	private async Task<(string OAuthClientId, string ClientSecret)> RegisterConfidentialClientAsync(
+		HttpClient httpClient)
+	{
+		var response = await httpClient.PostAsJsonAsync(
+			"/api/clients",
+			new
+			{
+				clientName = "Confidential Test Client",
+				clientType = "Confidential",
+				redirectUris = new[] { TestRedirectUri },
+				allowedScopes = new[] { "openid", "offline_access" }
+			},
+			TestCancellationToken);
+
+		var body = await response.Content.ReadFromJsonAsync<RegisterClientResponse>(TestCancellationToken);
+
+		return (body!.OAuthClientId, body.ClientSecret!);
+	}
+
 	private async Task<(string OAuthClientId, string RefreshToken)> GetInitialTokensAsync(
 		HttpClient httpClient)
 	{
@@ -207,18 +286,27 @@ public class RotateTokenTests(IntegrationTestFactory factory)
 	private async Task<JsonElement> ExchangeCodeAsync(
 		HttpClient httpClient,
 		string oauthClientId,
-		string code)
+		string code,
+		string? clientSecret = null)
 	{
-		var formData = new FormUrlEncodedContent(
-		[
+		var formFields = new List<KeyValuePair<string, string>>
+		{
 			new("grant_type", "authorization_code"),
 			new("code", code),
 			new("client_id", oauthClientId),
 			new("redirect_uri", TestRedirectUri),
 			new("code_verifier", CodeVerifier),
-		]);
+		};
 
-		var response = await httpClient.PostAsync("/connect/token", formData, TestCancellationToken);
+		if (clientSecret is not null)
+		{
+			formFields.Add(new("client_secret", clientSecret));
+		}
+
+		var response = await httpClient.PostAsync(
+			"/connect/token",
+			new FormUrlEncodedContent(formFields),
+			TestCancellationToken);
 
 		return await response.Content.ReadFromJsonAsync<JsonElement>(TestCancellationToken);
 	}
@@ -226,16 +314,25 @@ public class RotateTokenTests(IntegrationTestFactory factory)
 	private async Task<HttpResponseMessage> RotateTokenRawAsync(
 		HttpClient httpClient,
 		string oauthClientId,
-		string refreshToken)
+		string refreshToken,
+		string? clientSecret = null)
 	{
-		var formData = new FormUrlEncodedContent(
-		[
+		var formFields = new List<KeyValuePair<string, string>>
+		{
 			new("grant_type", "refresh_token"),
 			new("client_id", oauthClientId),
 			new("refresh_token", refreshToken),
-		]);
+		};
 
-		return await httpClient.PostAsync("/connect/token", formData, TestCancellationToken);
+		if (clientSecret is not null)
+		{
+			formFields.Add(new("client_secret", clientSecret));
+		}
+
+		return await httpClient.PostAsync(
+			"/connect/token",
+			new FormUrlEncodedContent(formFields),
+			TestCancellationToken);
 	}
 
 	private async Task<JsonElement> RotateTokenAsync(

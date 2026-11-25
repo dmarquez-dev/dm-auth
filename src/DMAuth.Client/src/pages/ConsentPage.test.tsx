@@ -42,7 +42,24 @@ const setup = (url: string, user: User | null | undefined = testUser) =>
 
 describe('ConsentPage', () => {
   beforeEach(() => { vi.clearAllMocks() })
-  afterEach(() => { vi.unstubAllGlobals() })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it('posts the approve form to the API base URL when VITE_API_BASE_URL is set', () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.test/')
+    setup(`/consent${VALID_PARAMS}`, testUser)
+    expect(screen.getByRole('form', { name: /approve access/i }))
+      .toHaveAttribute('action', 'https://api.example.test/connect/consent')
+  })
+
+  it('posts the approve form to /connect/consent when VITE_API_BASE_URL is unset', () => {
+    vi.stubEnv('VITE_API_BASE_URL', undefined)
+    setup(`/consent${VALID_PARAMS}`, testUser)
+    expect(screen.getByRole('form', { name: /approve access/i }))
+      .toHaveAttribute('action', '/connect/consent')
+  })
 
   it('redirects to /login when the user is not authenticated', () => {
     setup(`/consent${VALID_PARAMS}`, null)

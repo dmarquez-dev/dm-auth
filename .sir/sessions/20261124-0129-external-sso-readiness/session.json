@@ -1,0 +1,49 @@
+{
+  "id": "20261124-0129-external-sso-readiness",
+  "name": "external-sso-readiness",
+  "scope": "standard",
+  "status": "WRAPPED",
+  "brief": "Prepare DM Auth to serve an external application (a .NET API + React SPA) signing in through its authorization-code + PKCE flow. First restore a solution that builds (IW-001: remove the NU1605 package downgrade and pin Infrastructure's floating versions) and test projects that actually run tests (NT-001: VSTest runner packages in both projects, plus a declared Key Vault switch so integration tests need no Azure credentials). Then fix the flow: the token endpoint verifies a confidential client's client_secret from the form on both the code exchange and refresh rotation, returning invalid_client before any code or token lookup (DA-001); the code redirect keeps a redirect URI's existing query (IW-004); GrantConsent rejects an unregistered redirect URI or a disallowed scope before issuing a code (DA-002); the consent form posts to the API base URL (FE-003); and the login page classifies returnUrl so the authorize resume URL is loaded with a full navigation and anything foreign falls back to the dashboard (FE-004). Five tasks, a serialized dotnet chain T1-T4 and a frontend task T5.",
+  "started": "2026-11-24T01:29:51Z",
+  "ended": "2026-11-25T18:24:48Z",
+  "parent": null,
+  "children": [],
+  "integration": "pr",
+  "branchType": "fix",
+  "runs": [
+    {
+      "phase": "discuss",
+      "cc": "ddc038f2-490d-45de-ae34-ada3b3ab91d2",
+      "sir": "1.0.55",
+      "started": "2026-11-24T01:31:56Z",
+      "ended": "2026-11-24T01:43:00Z",
+      "outcome": "complete"
+    },
+    {
+      "phase": "spec",
+      "cc": "6d423816-26e8-4998-b2bc-82d7d11e6da9",
+      "sir": "1.0.55",
+      "started": "2026-11-24T01:46:38Z",
+      "ended": "2026-11-24T19:02:46Z",
+      "outcome": "complete"
+    },
+    {
+      "phase": "implement",
+      "cc": "0226839b-2be8-4983-9d3f-ca2be9e6df09",
+      "sir": "1.0.55",
+      "started": "2026-11-24T19:07:19Z",
+      "ended": "2026-11-25T18:06:12Z",
+      "outcome": "complete"
+    },
+    {
+      "phase": "review",
+      "cc": "c6866adf-c64b-4593-b07b-76650a4feb66",
+      "sir": "1.0.55",
+      "started": "2026-11-25T18:11:58Z",
+      "ended": "2026-11-25T18:24:48Z",
+      "outcome": "complete"
+    }
+  ],
+  "metrics": { "userInteractions": 6, "escalationsRaised": 6, "reviewRounds": 0 },
+  "pushed": true
+}

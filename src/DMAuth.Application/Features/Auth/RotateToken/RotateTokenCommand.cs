@@ -14,7 +14,12 @@ namespace DMAuth.Application.Features.Auth.RotateToken;
 /// <param name="Token">
 ///		The plain refresh token value presented by the client.
 /// </param>
+/// <param name="ClientSecret">
+///		The plain client secret sent in the <c>client_secret</c> form field (client_secret_post).
+///		Required for confidential clients and ignored for public clients.
+/// </param>
 public record RotateTokenCommand(
 	string ClientId,
-	string Token)
+	string Token,
+	string? ClientSecret)
 		: IRequest<TypedResult<ExchangeTokenResponse>>;

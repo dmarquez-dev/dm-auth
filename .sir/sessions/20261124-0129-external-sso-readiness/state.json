@@ -1,0 +1,231 @@
+{
+  "session": "20261124-0129-external-sso-readiness",
+  "updatedAt": "2026-11-25T18:17:45Z",
+  "worktree": "/c/Users/dmarq/Development/Repos/dm-auth/.claude-worktrees/20261124-0129-external-sso-readiness",
+  "branch": "fix/external-sso-readiness",
+  "verification": [
+    {
+      "command": "dotnet build src/DM-Auth.sln",
+      "runnable": true,
+      "probe": "after T1 (73ae2d8): Build succeeded. 0 Warning(s) 0 Error(s) (T1 reviewer reproduced); at implement entry before T1: 0 Warning(s) 1 Error(s), NU1605"
+    },
+    {
+      "command": "dotnet test tests/DMAuth.Tests.Unit/DMAuth.Tests.Unit.csproj",
+      "runnable": true,
+      "probe": "after T2 (eaaa50d): Failed: 0, Passed: 234, Total: 234 (T2 reviewer reproduced)"
+    },
+    {
+      "command": "dotnet test tests/DMAuth.Tests.Integration/DMAuth.Tests.Integration.csproj",
+      "runnable": true,
+      "probe": "after T2 (eaaa50d): Failed: 0, Passed: 109, Total: 109, no Azure credentials (T2 reviewer reproduced)"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client run test",
+      "runnable": true,
+      "probe": "after npm ci --legacy-peer-deps (A2): Test Files 16 passed (16), Tests 123 passed (123), exit=0"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client run lint",
+      "runnable": true,
+      "probe": "runs; exit=1 at base: 14 problems (6 errors, 8 warnings): 2 in src/api/client.test.ts, 4 in tests/e2e (A3)"
+    },
+    {
+      "command": "npm --prefix src/DMAuth.Client run build",
+      "runnable": true,
+      "probe": "after npm ci --legacy-peer-deps (A2): built, exit=0"
+    }
+  ],
+  "tasks": [
+    { "id": "T1", "status": "done", "revisionRounds": 0, "startRef": "ba33897a43eedd5861aa4f09775fae38371f0c9c", "model": "opus", "commit": "73ae2d8788964fb2ac862406416ba4214f299afc" },
+    { "id": "T2", "status": "done", "revisionRounds": 0, "startRef": "73ae2d8788964fb2ac862406416ba4214f299afc", "model": "opus", "commit": "eaaa50dd945b52b1010edcb1ceb0705105007d2b" },
+    { "id": "T3", "status": "done", "revisionRounds": 0, "startRef": "eaaa50dd945b52b1010edcb1ceb0705105007d2b", "model": "opus", "commit": "36925773ee78fd44d347351955292a9d31d24462" },
+    { "id": "T4", "status": "done", "revisionRounds": 0, "startRef": "36925773ee78fd44d347351955292a9d31d24462", "model": "opus", "commit": "84f3cf9974452cac7a7d601a640558b903831dfa" },
+    { "id": "T5", "status": "done", "revisionRounds": 0, "startRef": "eaaa50dd945b52b1010edcb1ceb0705105007d2b", "model": "opus", "commit": "7de4346171752f8beaaff979c6daf4f4ab68eff1" }
+  ],
+  "escalations": [
+    {
+      "id": "E1",
+      "question": "How wide should this unit be?",
+      "reason": "ambiguous",
+      "resolved": true,
+      "answer": "The 7 rows: IW-001, NT-001, FE-003, FE-004, IW-004, DA-001, DA-002 (asked inside Gate 1).",
+      "options": [
+        {
+          "summary": "The 7 rows: build/test unblock plus the external-SSO flow fixes",
+          "rationale": "Restores a runnable build and tests, then fixes every defect on the authorization-code path an external client walks.",
+          "evidence": { "kind": "repo", "sources": [".sir/backlog.md"] }
+        },
+        {
+          "summary": "5 rows: unblock plus flow only",
+          "rationale": "Smaller unit; leaves the confidential-client secret and consent-validation security fixes for later.",
+          "evidence": { "kind": "repo", "sources": [".sir/backlog.md"] }
+        },
+        {
+          "summary": "10 rows: the 7 plus FE-002, FE-001, IW-003",
+          "rationale": "Also closes consent CSRF, deny redirect and token no-store, at the cost of a larger session.",
+          "evidence": { "kind": "repo", "sources": [".sir/backlog.md"] }
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "taskId": "T2",
+      "question": "May NT-001's task also own src/DMAuth.Web/Program.cs, src/DMAuth.Web/appsettings.json and IntegrationTestFactory.cs so integration tests can turn Key Vault off?",
+      "reason": "ambiguous",
+      "resolved": true,
+      "answer": "Declared switch KeyVault:Enabled, default true; the integration test factory sets it false through UseSetting. T2 owns Program.cs, appsettings.json and IntegrationTestFactory.cs (Gate 2 D1).",
+      "options": [
+        {
+          "summary": "Declared switch KeyVault:Enabled, default true; the factory sets it false via UseSetting",
+          "rationale": "Measured green in scratch (234 and 107, 0 failed); production fail-fast kept and newly tested; environment differences as declared config per backend.md.",
+          "evidence": { "kind": "repo", "sources": ["src/DMAuth.Web/Program.cs", "tests/DMAuth.Tests.Integration/Common/IntegrationTestFactory.cs", "src/DMAuth.Web/appsettings.Development.json"] }
+        },
+        {
+          "summary": "No code change; refresh az login so tests read the real dev vault",
+          "rationale": "Works today but makes every integration run depend on the network and a live credential, against test.md isolation.",
+          "evidence": { "kind": "repo", "sources": ["src/DMAuth.Web/appsettings.Development.json"] }
+        },
+        {
+          "summary": "Leave integration failing",
+          "rationale": "T3's integration criteria and T4's solution gate would have no evidence; IW-004 is testable only through integration.",
+          "evidence": { "kind": "repo", "sources": ["src/DMAuth.Web/Auth/AuthController.cs"] }
+        }
+      ]
+    },
+    {
+      "id": "E3",
+      "taskId": "T2",
+      "question": "T2 criterion 11 names 'the ProgramTests test' (criterion 10's) as the injected-default demonstrator, but appsettings.json's KeyVault.Enabled: true (criterion 9) masks the code default, so that test cannot go red. How should criterion 11 read?",
+      "reason": "expensive-to-reverse",
+      "resolved": true,
+      "answer": "Name the second test: amend criterion 11 so its demonstrator is Startup_WithNoAppSettingsFiles_ThrowsInvalidOperationException; keep both tests (amendment A1).",
+      "options": [
+        {
+          "summary": "Amend criterion 11 to name the code-default test (Startup_WithNoAppSettingsFiles_..., empty content root) as its demonstrator; keep both tests",
+          "rationale": "Leaves the work as built; it is the only test exercising criterion 8's code default, and it discriminates.",
+          "evidence": { "kind": "repo", "sources": ["tests/DMAuth.Tests.Integration/Common/ProgramTests.cs", "src/DMAuth.Web/Program.cs"] }
+        },
+        {
+          "summary": "Amend criterion 11 to inject at appsettings.json (Enabled true -> false) and drop the second test",
+          "rationale": "Criterion 10's test would then discriminate the declared setting; criterion 8's code default would be covered by no test.",
+          "evidence": { "kind": "judgment" }
+        },
+        {
+          "summary": "Keep criterion 11 as written and accept it as not met",
+          "rationale": "Records that the criterion-10 test cannot discriminate the code default while appsettings declares the switch.",
+          "evidence": { "kind": "repo", "sources": ["src/DMAuth.Web/appsettings.json"] }
+        }
+      ]
+    },
+    {
+      "id": "E4",
+      "taskId": "T5",
+      "question": "T5 criterion 1 says the orchestrator runs `npm ci --prefix src/DMAuth.Client`; npm 11.6.2 refuses with EUSAGE (lock missing @emnapi/core@1.11.3, @emnapi/wasi-threads@1.2.3, optional peers of the wasm32 rolldown binding). How should the install be done?",
+      "reason": "expensive-to-reverse",
+      "resolved": true,
+      "answer": "--legacy-peer-deps: amend T5 criterion 1 to `npm ci --legacy-peer-deps --prefix src/DMAuth.Client` (amendment A2); the install already run stands.",
+      "options": [
+        {
+          "summary": "Amend criterion 1 to `npm ci --legacy-peer-deps --prefix src/DMAuth.Client`",
+          "rationale": "Already run: installs from the lock as-is and leaves package.json and package-lock.json unchanged (git status clean for src/DMAuth.Client).",
+          "evidence": { "kind": "repo", "sources": ["src/DMAuth.Client/package-lock.json"] }
+        },
+        {
+          "summary": "Regenerate the lock with `npm install` inside T5 (add package-lock.json to T5's owns, drop the 'not changed' clause)",
+          "rationale": "Fixes the lock for every future clean install, but widens T5 and moves resolved versions in a session about the SSO flow.",
+          "evidence": { "kind": "judgment" }
+        },
+        {
+          "summary": "Defer T5 (FE-003, FE-004) to the backlog",
+          "rationale": "Keeps the session to the dotnet chain; the frontend flow fixes wait for a lockfile repair.",
+          "evidence": { "kind": "judgment" }
+        }
+      ]
+    },
+    {
+      "id": "E5",
+      "taskId": "T5",
+      "question": "T5's criterion `npm --prefix src/DMAuth.Client run lint` exits 0 cannot hold within T5's owns: lint at base reports 6 errors, 2 in src/api/client.test.ts (owned) and 4 in tests/e2e/auth.spec.ts, tests/e2e/fixtures/auth.ts and tests/e2e/profile.spec.ts (not owned). How should the lint criterion read?",
+      "reason": "expensive-to-reverse",
+      "resolved": true,
+      "answer": "Scope to owned files: eslint over T5's six owned files exits 0 and repo-wide lint reports only the 4 pre-existing e2e errors (amendment A3); the e2e errors go to the backlog at Gate 3.",
+      "options": [
+        {
+          "summary": "Amend: eslint over T5's owned files exits 0, and repo-wide lint reports no error outside the 4 pre-existing e2e errors",
+          "rationale": "Keeps T5 to its signed files; T5 fixes the 2 client.test.ts errors it owns; the e2e errors go to the backlog at Gate 3.",
+          "evidence": { "kind": "repo", "sources": ["src/DMAuth.Client/tests/e2e/auth.spec.ts", "src/DMAuth.Client/tests/e2e/fixtures/auth.ts", "src/DMAuth.Client/tests/e2e/profile.spec.ts", "src/DMAuth.Client/src/api/client.test.ts"] }
+        },
+        {
+          "summary": "Widen T5's owns to the 3 e2e files and fix all 6 errors, keeping `run lint` exits 0",
+          "rationale": "Lint goes green repo-wide, at the cost of touching e2e fixtures outside the SSO scope (one is a rules-of-hooks false positive on Playwright's `use`).",
+          "evidence": { "kind": "repo", "sources": ["src/DMAuth.Client/tests/e2e/fixtures/auth.ts"] }
+        },
+        {
+          "summary": "Keep the criterion as written and carry it to Gate 3 as not met",
+          "rationale": "Records the pre-existing lint failure without changing scope.",
+          "evidence": { "kind": "judgment" }
+        }
+      ]
+    },
+    {
+      "id": "E6",
+      "taskId": "T3",
+      "question": "T3 criterion 21 says added tests assert 'only with FluentAssertions', but criteria 2, 3, 6, 7, 8 and 10 require NSubstitute DidNotReceive() verifications in those same tests (test.md:229 bans xUnit Assert.*; test.md:239 prescribes DidNotReceive). How should criterion 21 read?",
+      "reason": "expensive-to-reverse",
+      "resolved": true,
+      "answer": "Amend to allow NSubstitute: criterion 21 now reads 'asserts only with FluentAssertions, verifying substitute calls with NSubstitute Received/DidNotReceive' (amendment A4); judged met with no code change.",
+      "options": [
+        {
+          "summary": "Amend criterion 21 to 'asserts only with FluentAssertions, verifying substitute calls with NSubstitute Received/DidNotReceive'; judge it met",
+          "rationale": "Records the reading in the frozen text; no code change; consistent with test.md:229 and :239 side by side.",
+          "evidence": { "kind": "repo", "sources": [".sir/sessions/20261124-0129-external-sso-readiness/disciplines/test.md"] }
+        },
+        {
+          "summary": "Replace each DidNotReceive with a FluentAssertions check such as ReceivedCalls().Should().BeEmpty()",
+          "rationale": "Satisfies criterion 21's strict letter but breaks the explicit '(DidNotReceive)' wording of criteria 2, 3, 7, 8 and departs from test.md:239.",
+          "evidence": { "kind": "repo", "sources": [".sir/sessions/20261124-0129-external-sso-readiness/disciplines/test.md"] }
+        },
+        {
+          "summary": "Keep criterion 21 as written and carry it to Gate 3 as not met",
+          "rationale": "Records the conflict without changing text or code.",
+          "evidence": { "kind": "judgment" }
+        }
+      ]
+    }
+  ],
+  "amendments": [
+    {
+      "id": "A1",
+      "escalation": "E3",
+      "artifact": "manifest.json",
+      "before": "T2 criterion 11: demonstrated discrimination for the ProgramTests test (criterion 10's) under an injected disabled default",
+      "after": "T2 criterion 11: demonstrated discrimination for the code default via Startup_WithNoAppSettingsFiles_ThrowsInvalidOperationException (empty content root)",
+      "inFlight": []
+    },
+    {
+      "id": "A2",
+      "escalation": "E4",
+      "artifact": "manifest.json",
+      "before": "T5 criterion 1: the orchestrator runs `npm ci --prefix src/DMAuth.Client`",
+      "after": "T5 criterion 1: the orchestrator runs `npm ci --legacy-peer-deps --prefix src/DMAuth.Client`",
+      "inFlight": []
+    },
+    {
+      "id": "A3",
+      "escalation": "E5",
+      "artifact": "manifest.json",
+      "before": "T5 lint criterion: `npm --prefix src/DMAuth.Client run lint` exits 0",
+      "after": "T5 lint criterion: eslint over T5's six owned files exits 0, and repo-wide lint reports exactly the 4 pre-existing e2e errors",
+      "inFlight": []
+    },
+    {
+      "id": "A4",
+      "escalation": "E6",
+      "artifact": "manifest.json",
+      "before": "T3 criterion 21: ... asserts only with FluentAssertions",
+      "after": "T3 criterion 21: ... asserts only with FluentAssertions, verifying substitute calls with NSubstitute Received/DidNotReceive",
+      "inFlight": []
+    }
+  ],
+  "metrics": { "userInteractions": 6, "escalationsRaised": 6, "reviewRounds": 0 }
+}
