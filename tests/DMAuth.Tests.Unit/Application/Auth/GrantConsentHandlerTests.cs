@@ -143,6 +143,106 @@ public class GrantConsentHandlerTests
 		result.Value!.PlainCode.Should().NotBeNullOrEmpty();
 	}
 
+	[Fact]
+	public async Task Handle_WithUnregisteredRedirectUri_ReturnsInvalidAndDoesNotAddCode()
+	{
+		// Arrange
+		SetupActiveClient();
+
+		_consentRepository.FindByUserAndClientAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns((Consent?)null);
+
+		var command = ValidCommand() with { RedirectUri = "https://attacker.example/callback" };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeFalse();
+		result.ErrorType.Should().Be(ResultError.Invalid);
+		_authorizationCodeRepository.DidNotReceive().Add(Arg.Any<AuthorizationCode>());
+	}
+
+	[Fact]
+	public async Task Handle_WithRedirectUriExtendingRegisteredUri_ReturnsInvalidAndDoesNotAddCode()
+	{
+		// Arrange
+		SetupActiveClient();
+
+		_consentRepository.FindByUserAndClientAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns((Consent?)null);
+
+		var command = ValidCommand() with { RedirectUri = "https://example.com/callback/extra" };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeFalse();
+		result.ErrorType.Should().Be(ResultError.Invalid);
+		_authorizationCodeRepository.DidNotReceive().Add(Arg.Any<AuthorizationCode>());
+	}
+
+	[Fact]
+	public async Task Handle_WithScopeNotAllowedForClient_ReturnsInvalidAndDoesNotAddCode()
+	{
+		// Arrange
+		SetupActiveClient();
+
+		_consentRepository.FindByUserAndClientAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns((Consent?)null);
+
+		var command = ValidCommand() with { GrantedScopes = ["openid", "admin"] };
+
+		// Act
+		var result = await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		result.IsSuccess.Should().BeFalse();
+		result.ErrorType.Should().Be(ResultError.Invalid);
+		_authorizationCodeRepository.DidNotReceive().Add(Arg.Any<AuthorizationCode>());
+	}
+
+	[Fact]
+	public async Task Handle_WithUnregisteredRedirectUri_DoesNotWriteConsent()
+	{
+		// Arrange
+		SetupActiveClient();
+
+		_consentRepository.FindByUserAndClientAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns((Consent?)null);
+
+		var command = ValidCommand() with { RedirectUri = "https://attacker.example/callback" };
+
+		// Act
+		await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		_consentRepository.DidNotReceive().Add(Arg.Any<Consent>());
+		_consentRepository.DidNotReceive().Update(Arg.Any<Consent>());
+	}
+
+	[Fact]
+	public async Task Handle_WithUnregisteredRedirectUriAndExistingPartialConsent_DoesNotWriteConsent()
+	{
+		// Arrange
+		SetupActiveClient();
+
+		var existingConsent = new Consent(Guid.NewGuid(), Guid.NewGuid(), "openid");
+
+		_consentRepository.FindByUserAndClientAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(existingConsent);
+
+		var command = ValidCommand() with { RedirectUri = "https://attacker.example/callback" };
+
+		// Act
+		await _handler.Handle(command, TestCancellationToken);
+
+		// Assert
+		_consentRepository.DidNotReceive().Add(Arg.Any<Consent>());
+		_consentRepository.DidNotReceive().Update(Arg.Any<Consent>());
+	}
+
 	private void SetupActiveClient()
 	{
 		_clientRepository.FindByClientIdAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
