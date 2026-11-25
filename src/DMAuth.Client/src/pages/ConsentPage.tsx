@@ -1,4 +1,6 @@
 import { useSearchParams, Navigate } from 'react-router-dom'
+
+import { apiUrl } from '../api/client'
 import { useAuth } from '../auth/useAuth'
 
 const SCOPE_DESCRIPTIONS: Record<string, { label: string; description: string }> = {
@@ -118,7 +120,7 @@ export function ConsentPage() {
           </p>
 
           {/* Approve — native form POST so the browser follows the 302 redirect */}
-          <form method="post" action="/connect/consent" className="mb-3">
+          <form method="post" action={apiUrl('/connect/consent')} aria-label="Approve access" className="mb-3">
             <input type="hidden" name="client_id" value={clientId} />
             {requestedScopes.map(s => (
               <input key={s} type="hidden" name="scope" value={s} />

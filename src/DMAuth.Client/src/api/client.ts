@@ -1,7 +1,34 @@
 import axios from 'axios'
 
+// The one place the API base URL is read from the environment. Unset means same origin
+// (the Vite dev proxy). Read on every call so tests can stub it per case.
+const getApiBaseUrl = (): string => import.meta.env.VITE_API_BASE_URL || '/'
+
+/**
+ * Builds a URL for an API path the browser navigates to directly (a native form post),
+ * joined the same way axios joins `baseURL` and a request path.
+ */
+export function apiUrl(path: string): string {
+  return `${getApiBaseUrl().replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+}
+
+/**
+ * True when `url` is an absolute URL on the API's origin (the base URL resolved against
+ * the SPA's origin) whose path is exactly `/connect/authorize`.
+ */
+export function isApiAuthorizeUrl(url: string): boolean {
+  let target: URL
+  try {
+    target = new URL(url) // no base: relative and protocol-relative URLs throw
+  } catch {
+    return false
+  }
+  const apiOrigin = new URL(getApiBaseUrl(), window.location.origin).origin
+  return target.origin === apiOrigin && target.pathname === '/connect/authorize'
+}
+
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/',
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

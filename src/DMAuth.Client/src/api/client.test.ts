@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { apiClient } from './client'
+import { apiClient, apiUrl, isApiAuthorizeUrl } from './client'
 
 // Reach into the interceptor manager to get the registered error handler.
 // Axios stores handlers in an array; our interceptor is the first (index 0).
-const getErrorHandler = () => {
-  const handlers = (apiClient.interceptors.response as any).handlers as Array<{
-    fulfilled: ((r: unknown) => unknown) | null
-    rejected: ((e: unknown) => unknown) | null
-  }>
-  return handlers[0].rejected!
-}
+type InterceptorHandlers = Array<{
+  fulfilled: ((r: unknown) => unknown) | null
+  rejected: ((e: unknown) => unknown) | null
+}>
+
+const getHandlers = () =>
+  (apiClient.interceptors.response as unknown as { handlers: InterceptorHandlers }).handlers
+
+const getErrorHandler = () => getHandlers()[0].rejected!
 
 const stubLocation = (pathname: string, search = '') => {
   let href = ''
@@ -27,10 +29,7 @@ describe('apiClient — response interceptor', () => {
 
   it('passes successful responses through unchanged', () => {
     const response = { data: { ok: true }, status: 200 }
-    const handlers = (apiClient.interceptors.response as any).handlers as Array<{
-      fulfilled: ((r: unknown) => unknown) | null
-    }>
-    expect(handlers[0].fulfilled!(response)).toBe(response)
+    expect(getHandlers()[0].fulfilled!(response)).toBe(response)
   })
 
   it('redirects to /login with returnUrl on a 401 from a standard API endpoint', async () => {
@@ -79,5 +78,40 @@ describe('apiClient — response interceptor', () => {
 
     await expect(getErrorHandler()(error)).rejects.toBe(error)
     expect(getHref()).toBe('')
+  })
+})
+
+describe('apiUrl', () => {
+  afterEach(() => { vi.unstubAllEnvs() })
+
+  it.each([
+    [undefined, '/connect/consent'],
+    ['https://api.example.test/', 'https://api.example.test/connect/consent'],
+    ['https://api.example.test', 'https://api.example.test/connect/consent'],
+  ])('joins /connect/consent onto VITE_API_BASE_URL %s as %s', (apiBaseUrl, expected) => {
+    vi.stubEnv('VITE_API_BASE_URL', apiBaseUrl)
+    expect(apiUrl('/connect/consent')).toBe(expected)
+  })
+})
+
+describe('isApiAuthorizeUrl', () => {
+  afterEach(() => { vi.unstubAllEnvs() })
+
+  it.each([
+    ['https://api.example.test/connect/authorize?client_id=x', true],
+    ['https://api.example.test/connect/authorize/extra', false],
+    ['https://api.example.test/api/users/me', false],
+    ['https://evil.example/connect/authorize', false],
+    ['//api.example.test/connect/authorize', false],
+    ['/connect/authorize', false],
+    ['not a url', false],
+  ])('classifies %s as %s when the API is https://api.example.test/', (url, expected) => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.test/')
+    expect(isApiAuthorizeUrl(url)).toBe(expected)
+  })
+
+  it('accepts an absolute /connect/authorize URL on the SPA origin when VITE_API_BASE_URL is unset', () => {
+    vi.stubEnv('VITE_API_BASE_URL', undefined)
+    expect(isApiAuthorizeUrl(`${window.location.origin}/connect/authorize?client_id=x`)).toBe(true)
   })
 })
